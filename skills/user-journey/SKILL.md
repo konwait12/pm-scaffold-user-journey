@@ -1,6 +1,6 @@
 ---
 name: user-journey
-description: Turn confirmed business background and raw journey material into a source-bounded, lifecycle-by-role user journey, with optional single-file HTML review board.
+description: Turn confirmed business background and raw journey material into a source-bounded, lifecycle-by-role user journey, with optional single-file HTML review board, in-MD Mermaid diagrams, and a hand-crafted HTML journey-map studio for reporting.
 ---
 
 # 用户旅程
@@ -61,6 +61,55 @@ lark-cli docs +fetch \
 - 反模式检查：`references/anti-patterns.md`。
 
 参考文档只提供方法，不是项目事实来源。
+
+## 参考文档加载规则（v1.1 · 条件必选）
+
+> **v1.0 → v1.1 变更**:把"按需 reference 会被 AI 跳过"这一盲测实测发现固化进 skill。条件触发时,reference 升级为**必选**;AI 必须实际阅读并把已加载清单登记进治理伴随文件。
+
+### 必选（无前置条件,Phase 2 启动前必读）
+
+| 文档 | 触发条件 |
+|---|---|
+| `references/output-contract.md` | **任何旅程产物都必读** |
+| `references/audit-checklist.md` | **任何旅程产物都必读** |
+| `references/anti-patterns.md` | **任何旅程产物都必读** |
+
+### 条件必选（满足任一条件即升级为必选,不可跳过）
+
+| 文档 | 升级触发条件 | 跳过条件 |
+|---|---|---|
+| `references/journey-matrix-and-mot.md` | 角色数 ≥ 2 **或** 阶段数 ≥ 3 | 角色 = 1 且阶段 ≤ 2 时可声明不加载,但治理文件必须填"不加载理由" |
+| `references/journey-error-recovery-and-metrics.md` | 材料中存在以下任一信号:① 出现"失败/中断/退款/超时/异常/报错"等关键词;② 用户描述中含指标空白 | 否则可声明不加载,治理文件必须填"不加载理由" |
+| `references/journey-behavior-vs-feature-jtbd.md` | 材料中含功能/页面/按钮/接口/字段等实现层描述 | 否则可声明不加载,治理文件必须填"不加载理由" |
+| `references/html-journey-board.md` | PM 明确要求 HTML 审阅板 **或** 产物 ≥ 5 个角色×5 个阶段 | 否则可声明不加载,治理文件必须填"不加载理由" |
+| `references/reviewer-checklist.md` | 人工评审前 | 否则可声明不加载,治理文件必须填"不加载理由" |
+
+### 登记规则
+
+在治理伴随文件的 **"类型判断与输入充分度"** 段,新增一行 **"已加载 reference 清单"**,逐行列出本次实际加载的 reference 文件名。校验器会读取这段并核对:
+
+- 每个**必选** reference 必须出现在清单中 → 否则 `uj.required_reference_missing`
+- 每个**条件必选** reference 若声明"不加载理由",理由必须 ≥ 10 个汉字且不得为"不适用" /"待确认"等占位 → 否则 `uj.conditional_reference_skipped_invalid`
+- 每个出现在清单里的 reference,主文档的产物章节必须能追到对应方法(如 "E1/E2 异常表" 来自 `journey-error-recovery-and-metrics.md`)→ 否则 `uj.reference_to_evidence_missing` (warning)
+
+> **第一轮盲测教训**:AI 会跳过按需 reference。v1.1 把跳过权收回到治理文件 + 校验器,治理文件是 AI 与 PM 沟通"为什么跳过"的唯一渠道。
+
+### 已加载清单样例
+
+```markdown
+## 已加载 reference 清单
+
+| reference | 状态 | 跳过理由 |
+|---|---|---|
+| references/output-contract.md | 已加载 | — |
+| references/audit-checklist.md | 已加载 | — |
+| references/anti-patterns.md | 已加载 | — |
+| references/journey-matrix-and-mot.md | 已加载 | — |
+| references/journey-error-recovery-and-metrics.md | 已加载 | — |
+| references/journey-behavior-vs-feature-jtbd.md | **跳过** | 材料未提及任何功能/页面/字段;旅程仅描述角色行为 |
+| references/html-journey-board.md | **跳过** | PM 未要求 HTML 板 |
+| references/reviewer-checklist.md | **跳过** | 本次未进入评审阶段 |
+```
 
 ## 使用协议（来自 2026-08-27 会议约定）
 
@@ -163,6 +212,14 @@ lark-cli docs +fetch \
 状态只能是 `draft`、`needs_user_input`、`conditional_review` 或 `ready_for_human_review`，AI 永远不能写 `confirmed`。
 
 当多角色多阶段需要现场审阅，或 PM 明确要求可视化时，生成 `user-journey.board.html`：单文件、零外部网络依赖、按角色/阶段/路径筛选并可展开证据和未知项。它只呈现旅程材料，不新增页面、文案、功能或状态；具体契约见 `references/html-journey-board.md`。
+
+可视化输出分两层，均只呈现旅程材料、不新增或改写内容，节点/阶段/角色须与 Markdown 主文档一致：
+
+**第一层（默认 · MD 内嵌）**：旅程主文档内的 Mermaid 代码块，覆盖全部常用图型（旅程、流程、泳道、时序、状态、甘特等），作为随文档版本管理的初版图，零额外文件。需要交互浏览时可选生成 `journey-diagram-studio.html`：基于本地打包的 Mermaid（`assets/lib/mermaid.min.js`，离线可用），标签页切换 11 种图类型，左编辑源码右即时渲染。
+
+**第二层（PM 汇报 · HTML 原生）**：当用户或 PM 要求"好看的图 / 汇报版 / 专门 HTML 版"时，生成 `journey-map-studio.html`：纯 HTML/SVG 手绘（不依赖 Mermaid），三个视图 —— 旅程地图（角色切换：综合视角 + 每个角色一条独立旅程，含角色目标、路径类型推导的顺畅度曲线并标注 AI_INFERENCE）、泳道流程图（角色泳道 + 正交连线，异常/失败/返工路径分色）、状态流（状态迁移 + 回路）。数据块与主文档角色旅程矩阵同源，替换 `DATA` 即可复用。
+
+**节点覆盖率硬约束（两层可视化均适用）**：任何可视化产物必须覆盖主文档角色旅程矩阵中的**全部角色 × 全部节点，一个不缺**。生成前先数主文档节点总数，再数可视化数据块节点总数，两者相等才允许交付；缺节点 = 交付失败。角色视图不得把多角色旅程压缩成一条混合旅程——每个角色必须能独立查看，角色没有节点的阶段如实留空，不得虚构行为填充。主文档没有的信息（如逐角色情绪分值）用可解释的推导（如按路径类型推导顺畅度）并显式标注 AI_INFERENCE，禁止无证据编造。
 
 ### 6. Audit：重新阅读并反证
 

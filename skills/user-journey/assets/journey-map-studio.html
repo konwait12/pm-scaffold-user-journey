@@ -1,0 +1,641 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>用户旅程 · 可视化画板（HTML 原生版）</title>
+<style>
+  :root {
+    color-scheme: light;
+    --ink:#1a2233; --muted:#667085; --line:#e4e8f0; --paper:#fff; --wash:#f6f8fb;
+    --accent:#175cd3; --accent-soft:#eaf1fd;
+    --good:#0f8a4d; --good-soft:#e9f7ef;
+    --warn:#b54708; --warn-soft:#fdf3e7;
+    --bad:#c0392b; --bad-soft:#fdecea;
+    --purple:#7f56d9; --purple-soft:#f1ecfd;
+    --radius:10px;
+    --shadow:0 1px 2px rgba(16,24,40,.05), 0 4px 14px -6px rgba(16,24,40,.08);
+    --font:system-ui,-apple-system,"PingFang SC","Microsoft YaHei","Segoe UI",sans-serif;
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; font:14px/1.6 var(--font); color:var(--ink); background:var(--wash); }
+
+  header { background:var(--paper); border-bottom:1px solid var(--line); padding:26px clamp(18px,4vw,52px) 20px; }
+  header h1 { margin:0 0 4px; font-size:23px; letter-spacing:.2px; }
+  header p { margin:0; color:var(--muted); font-size:13px; }
+  .tabs { display:flex; gap:8px; margin-top:16px; flex-wrap:wrap; }
+  .tab { padding:8px 16px; border:1px solid var(--line); border-radius:999px; background:var(--paper); cursor:pointer; font:600 13px/1 var(--font); color:var(--ink); transition:.15s; }
+  .tab:hover { border-color:var(--accent); color:var(--accent); }
+  .tab.active { background:var(--ink); border-color:var(--ink); color:#fff; }
+  .tab small { display:block; font-weight:400; opacity:.65; margin-top:3px; font-size:11px; }
+
+  main { max-width:1280px; margin:0 auto; padding:22px clamp(18px,4vw,52px) 64px; }
+  .view { display:none; }
+  .view.active { display:block; }
+  .view-intro { color:var(--muted); font-size:13px; margin:0 0 18px; }
+  .view-intro b { color:var(--ink); }
+
+  /* ===== 通用小件 ===== */
+  .chip { display:inline-flex; align-items:center; gap:6px; padding:4px 10px; border-radius:999px; font-size:12px; border:1px solid var(--line); background:var(--paper); }
+  .dot { width:7px; height:7px; border-radius:50%; flex:none; }
+  .badge { display:inline-block; padding:2px 8px; border-radius:6px; font-size:11px; font-weight:600; letter-spacing:.3px; }
+  .badge.fact { background:var(--accent-soft); color:var(--accent); }
+  .badge.inf  { background:var(--purple-soft); color:var(--purple); }
+  .badge.unk  { background:var(--warn-soft); color:var(--warn); }
+
+  /* ===== 视图一 · 旅程地图（里程碑路径 · 无表格） ===== */
+  .jm-wrap { background:var(--paper); border:1px solid var(--line); border-radius:var(--radius); box-shadow:var(--shadow); padding:32px 24px 28px; }
+  .jm-stations { display:grid; grid-template-columns:repeat(var(--n,6),1fr); position:relative; }
+  .jm-stations::before { content:""; position:absolute; top:21px; left:calc(100%/(var(--n,6)*2)); right:calc(100%/(var(--n,6)*2)); height:3px; border-radius:2px; background:linear-gradient(90deg,#dfe5ee,#c8d4e8); }
+  .jm-station { text-align:center; position:relative; z-index:1; padding:0 6px 16px; }
+  .st-dot { width:44px; height:44px; margin:0 auto; border-radius:50%; background:var(--paper); border:3px solid var(--c,#175cd3); display:flex; align-items:center; justify-content:center; font-weight:800; font-size:15px; color:var(--c,#175cd3); box-shadow:0 0 0 5px #fff, var(--shadow); }
+  .st-name { margin-top:10px; font-size:15px; font-weight:800; }
+  .st-trig { font-size:11.5px; color:var(--muted); margin-top:2px; line-height:1.45; }
+  .jm-emo { display:block; width:100%; height:165px; }
+  .jm-emo-row { display:grid; grid-template-columns:repeat(var(--n,6),1fr); margin:0 0 12px; }
+  .emo-lab { text-align:center; display:flex; flex-direction:column; gap:1px; padding:0 6px; }
+  .emo-lab b { font-size:16px; line-height:1.2; }
+  .emo-lab span { font-size:11px; color:var(--muted); line-height:1.4; }
+  .jm-cols { display:grid; grid-template-columns:repeat(var(--n,6),minmax(150px,1fr)); gap:0 14px; align-items:start; min-width:960px; }
+  .jm-scroll { overflow-x:auto; padding-bottom:6px; }
+  .jm-col { display:flex; flex-direction:column; gap:8px; padding-top:12px; position:relative; }
+  .jm-col::before { content:""; position:absolute; top:0; left:50%; transform:translateX(-50%); width:46px; height:3px; border-radius:2px; background:var(--c,#175cd3); opacity:.35; }
+  .jm-card { border:1px solid var(--line); border-left:3px solid var(--k,#98a4b8); border-radius:8px; padding:8px 10px; font-size:12.5px; line-height:1.5; background:#fff; box-shadow:0 1px 2px rgba(16,24,40,.04); overflow-wrap:anywhere; }
+  .jm-card .k { font-size:10px; font-weight:800; letter-spacing:1.5px; color:var(--muted); margin-bottom:3px; }
+  .jm-card.c-touch { --k:var(--accent); }
+  .jm-card.c-pain  { --k:var(--bad); background:var(--bad-soft); border-color:#f0cdc9; }
+  .jm-card.c-opp   { --k:var(--good); background:var(--good-soft); border-color:#cde6d8; }
+  .jm-narr { background:var(--paper); border:1px solid var(--line); border-radius:var(--radius); box-shadow:var(--shadow); padding:16px 20px; margin-top:16px; font-size:13px; color:var(--muted); }
+  .jm-narr b { color:var(--ink); }
+  .legendbar { display:flex; gap:16px; align-items:center; margin:0 0 12px; font-size:12px; color:var(--muted); flex-wrap:wrap; }
+  .rolebar { display:flex; flex-wrap:wrap; gap:8px; margin:0 0 14px; }
+  .rolechip { padding:7px 14px; border:1.5px solid var(--line); border-radius:9px; background:var(--paper); cursor:pointer; font:600 13px/1.3 var(--font); color:var(--ink); text-align:left; transition:.15s; }
+  .rolechip small { display:block; font-weight:400; font-size:10.5px; color:var(--muted); margin-top:2px; }
+  .rolechip:hover { border-color:var(--rc,var(--accent)); }
+  .rolechip.active { border-color:var(--rc,var(--ink)); box-shadow:inset 0 0 0 1px var(--rc,var(--ink)), var(--shadow); }
+  .rolechip.active small { color:var(--rc,var(--accent)); }
+  .role-goal { margin:0 0 16px; padding:10px 14px; border-radius:8px; background:var(--paper); border:1px solid var(--line); font-size:13px; }
+  .role-goal b { color:var(--rc,var(--accent)); }
+  .path-tag { display:inline-block; font-size:10px; font-weight:800; letter-spacing:.5px; padding:2px 7px; border-radius:5px; }
+  .path-tag.normal { background:var(--accent-soft); color:var(--accent); }
+  .path-tag.exception, .path-tag.failure { background:var(--bad-soft); color:var(--bad); }
+  .path-tag.recovery { background:#f0f1f4; color:var(--muted); }
+  .path-tag.alternative { background:var(--purple-soft); color:var(--purple); }
+  .path-tag.handoff { background:var(--warn-soft); color:var(--warn); }
+  .jm-card .n-title { font-weight:700; margin-bottom:3px; }
+  .legendbar .chip { cursor:default; }
+
+  /* ===== 视图二 · 泳道流程图 ===== */
+  .sw-wrap { position:relative; background:var(--paper); border:1px solid var(--line); border-radius:var(--radius); box-shadow:var(--shadow); overflow:auto; }
+  .sw { position:relative; min-width:1080px; }
+  .sw-grid { display:grid; grid-template-columns:150px repeat(6, minmax(140px,1fr)); }
+  .sw-hd { padding:11px 12px; text-align:center; font-size:12.5px; font-weight:700; border-bottom:1px solid var(--line); border-left:1px solid var(--line); background:linear-gradient(180deg,#fbfcfe,#f4f7fb); position:sticky; top:0; z-index:2; }
+  .sw-hd.blank { border-left:0; position:sticky; left:0; z-index:3; background:var(--paper); }
+  .sw-lane-label { border-top:1px solid var(--line); border-right:1px solid var(--line); padding:14px 12px; position:sticky; left:0; background:var(--paper); z-index:2; display:flex; flex-direction:column; gap:3px; }
+  .sw-lane-label .who { font-size:13.5px; font-weight:700; }
+  .sw-lane-label .goal { font-size:11px; color:var(--muted); line-height:1.45; }
+  .sw-lane-label .lbar { width:34px; height:4px; border-radius:2px; margin-bottom:2px; }
+  .sw-cell { border-top:1px solid var(--line); border-left:1px solid var(--line); min-height:120px; padding:10px; position:relative; }
+  .sw-node { position:relative; z-index:1; background:var(--paper); border:1.5px solid var(--accent); border-radius:9px; padding:9px 11px; box-shadow:var(--shadow); font-size:12.5px; }
+  .sw-node .n-title { font-weight:700; }
+  .sw-node .n-meta { color:var(--muted); font-size:11.5px; margin-top:3px; line-height:1.45; }
+  .sw-node.start { border-radius:999px; text-align:center; background:var(--accent-soft); }
+  .sw-node.end   { border-radius:999px; text-align:center; background:var(--good-soft); border-color:var(--good); }
+  .sw-node.decision { border-color:var(--purple); background:var(--purple-soft); }
+  .sw-node.exc { border-color:var(--warn); border-style:dashed; background:var(--warn-soft); }
+  .sw-node.fail { border-color:var(--bad); border-style:dashed; background:var(--bad-soft); }
+  .sw-node .n-path { display:inline-block; margin-top:6px; font-size:10px; font-weight:700; letter-spacing:.5px; padding:1px 7px; border-radius:5px; background:rgba(0,0,0,.05); }
+  .sw-edges { position:absolute; inset:0; z-index:0; pointer-events:none; }
+  .sw-edges path { fill:none; stroke-width:1.8; }
+  .sw-edges .e-normal { stroke:#98a4b8; }
+  .sw-edges .e-exc { stroke:var(--warn); stroke-dasharray:6 4; }
+  .sw-edges .e-fail { stroke:var(--bad); stroke-dasharray:6 4; }
+  .sw-edges .e-back { stroke:#98a4b8; stroke-dasharray:2 4; }
+  .sw-edges text { font:600 10.5px var(--font); fill:#667085; }
+  .sw-edges .lbl-exc { fill:var(--warn); } .sw-edges .lbl-fail { fill:var(--bad); }
+
+  /* ===== 视图三 · 状态流 ===== */
+  .st-wrap { background:var(--paper); border:1px solid var(--line); border-radius:var(--radius); box-shadow:var(--shadow); padding:34px 26px 26px; overflow:auto; }
+  .st-lane { display:flex; align-items:center; gap:0; min-width:980px; }
+  .st-node { flex:none; display:flex; flex-direction:column; align-items:center; gap:8px; }
+  .st-node .st-badges:first-child { min-height:24px; }
+  .st-capsule { padding:10px 20px; border-radius:999px; font-weight:700; font-size:14px; border:1.5px solid var(--accent); background:var(--paper); position:relative; }
+  .st-capsule .st-sub { display:block; font-size:11px; font-weight:400; color:var(--muted); margin-top:1px; }
+  .st-capsule.initial { background:var(--accent-soft); }
+  .st-capsule.warn { border-color:var(--warn); background:var(--warn-soft); }
+  .st-capsule.loopback { border-color:var(--purple); background:var(--purple-soft); }
+  .st-capsule.final { border-color:var(--good); background:var(--good-soft); }
+  .st-arrow { flex:none; width:64px; height:2px; background:#98a4b8; position:relative; }
+  .st-arrow::after { content:""; position:absolute; right:-1px; top:-4px; border-left:8px solid #98a4b8; border-top:5px solid transparent; border-bottom:5px solid transparent; }
+  .st-arrow .a-lbl { position:absolute; top:-20px; left:50%; transform:translateX(-50%); font-size:10.5px; white-space:nowrap; color:var(--muted); font-weight:600; }
+  .st-badges { display:flex; gap:5px; flex-wrap:wrap; justify-content:center; }
+  .st-loopnote { margin-top:30px; padding:12px 16px; border:1px dashed var(--purple); border-radius:8px; background:var(--purple-soft); color:var(--purple); font-size:12.5px; }
+  .st-loopnote b { color:#5b3bb0; }
+  .st-cards { display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:12px; margin-top:22px; }
+  .st-card { border:1px solid var(--line); border-radius:9px; padding:12px 14px; font-size:12.5px; }
+  .st-card h4 { margin:0 0 4px; font-size:13px; }
+  .st-card p { margin:0; color:var(--muted); }
+  .st-card .trigger { color:var(--ink); }
+
+  footer { max-width:1280px; margin:0 auto; padding:0 clamp(18px,4vw,52px) 40px; color:var(--muted); font-size:12px; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>用户旅程 · 可视化画板</h1>
+  <p>HTML 原生绘制 · 单文件零依赖 · 数据来自 user-journey.md（UJ-DEMO-001 · 内部代码评审系统 · 业务层）</p>
+  <nav class="tabs" id="tabs">
+    <button class="tab active" data-view="map">旅程地图<small>阶段 × 维度 + 情绪曲线</small></button>
+    <button class="tab" data-view="swim">泳道流程图<small>角色泳道 + 正交连线</small></button>
+    <button class="tab" data-view="state">状态流<small>状态迁移 + 回路</small></button>
+  </nav>
+</header>
+
+<main>
+
+  <!-- ================= 视图一 · 旅程地图 ================= -->
+  <section class="view active" id="view-map">
+    <p class="view-intro"><b>旅程地图</b> — 点角色名切换到该角色的独立旅程；「综合视角」为全角色汇总。情绪分值与痛点均来自原材料可观察行为；角色视图顺畅度由路径类型推导（<span class="badge inf">AI_INFERENCE</span>），未使用无证据形容词。</p>
+
+    <div class="rolebar" id="rolebar">
+      <button class="rolechip active" data-role="-1">综合视角<small>7 角色 · 6 阶段</small></button>
+    </div>
+    <div class="role-goal" id="role-goal" style="display:none"></div>
+
+    <div class="legendbar">
+      <span class="chip"><i class="dot" style="background:var(--good)"></i>顺畅（4–5）</span>
+      <span class="chip"><i class="dot" style="background:#e3a008"></i>一般（3）</span>
+      <span class="chip"><i class="dot" style="background:var(--bad)"></i>受阻（1–2）</span>
+      <span class="chip"><span class="badge fact">FACT</span>有来源</span>
+      <span class="chip"><span class="badge inf">AI_INFERENCE</span>推断</span>
+      <span class="chip"><span class="badge unk">UNKNOWN</span>待确认</span>
+    </div>
+
+    <div class="jm-wrap"><div class="jm" id="jm"></div></div>
+
+    <div class="jm-narr">
+      <b>一句话旅程叙事</b> — 开发者推送 MR，评审人在 SLA 内做出 approve / reject 决定，QA 与安全工程师同步跟踪，PM 拿到统计与项目进度，数据工程师把过程数据入仓供月度复盘；reject 时回到修改循环。<span class="badge inf" style="margin-left:4px">AI_INFERENCE</span>
+    </div>
+  </section>
+
+  <!-- ================= 视图二 · 泳道流程图 ================= -->
+  <section class="view" id="view-swim">
+    <p class="view-intro"><b>泳道流程图</b> — 每条泳道一个角色，横向为阶段推进；菱形为决策点，橙色虚线为异常路径，红色虚线为失败路径，灰色虚线为返工回路。</p>
+
+    <div class="legendbar">
+      <span class="chip"><i class="dot" style="background:var(--accent)"></i>正常节点</span>
+      <span class="chip"><i class="dot" style="background:var(--purple)"></i>决策</span>
+      <span class="chip"><i class="dot" style="background:var(--warn)"></i>异常 exception</span>
+      <span class="chip"><i class="dot" style="background:var(--bad)"></i>失败 failure</span>
+      <span class="chip"><i class="dot" style="background:#98a4b8"></i>返工 recovery</span>
+    </div>
+
+    <div class="sw-wrap"><div class="sw" id="sw">
+      <svg class="sw-edges" id="sw-edges"></svg>
+      <div class="sw-grid" id="sw-grid"></div>
+    </div></div>
+  </section>
+
+  <!-- ================= 视图三 · 状态流 ================= -->
+  <section class="view" id="view-state">
+    <p class="view-intro"><b>状态流</b> — 一次 MR 在旅程中的状态迁移，含拖期分支与修改回路。状态命名与 user-journey.md 路径覆盖表一致。</p>
+
+    <div class="st-wrap">
+      <div class="st-lane" id="st-lane"></div>
+      <div class="st-loopnote">↩ <b>修改回路</b>：开发者改完 push → 回到「评审中」；「拖期」经逾期升级后同样回到「评审中」。回路对应路径类型 recovery。</div>
+      <div class="st-cards" id="st-cards"></div>
+    </div>
+  </section>
+
+</main>
+
+<footer>只读画板：仅呈现旅程材料，不新增页面、功能或状态 · 证据与未知项可追至治理伴随文件</footer>
+
+<script>
+/* =====================================================================
+   数据块 — AI 使用时仅替换本块（与 user-journey.md 角色旅程矩阵同源）
+   ===================================================================== */
+const DATA = {
+  stages: [
+    { name:"MR 推送",  trig:"开发者完成 feature branch", color:"#175cd3" },
+    { name:"评审处理", trig:"MR 进入评审队列",           color:"#0f8a4d" },
+    { name:"反馈落地", trig:"评审人提意见",               color:"#b7791f" },
+    { name:"合入主线", trig:"评审通过",                   color:"#7f56d9" },
+    { name:"统计同步", trig:"MR 关闭",                    color:"#0e7490" },
+    { name:"审计合规", trig:"评审结果产出",               color:"#c2410c" }
+  ],
+  rows: {
+    actions:  { name:"用户行为",  sub:"各角色在此阶段做什么", cells:[
+      ["推 MR 并 @ 评审人"],
+      ["评审人查看代码，提意见 / approve / reject"],
+      ["开发者收到意见后改代码、重新 push"],
+      ["approve 后执行 merge"],
+      ["PM 看报表；数据工程师接入事件"],
+      ["安全工程师推 Jira、按 issue 追溯"]
+    ]},
+    touch:    { name:"触点",      sub:"与谁 / 哪个系统交接", cells:[
+      ["与评审人"],
+      ["与开发者"],
+      ["与评审人"],
+      ["GitLab / Bitbucket"],
+      ["与工程总监 / 数据仓库"],
+      ["与 PM / QA · Jira"]
+    ]},
+    emotion:  { name:"情绪体验",  sub:"1（受阻）– 5（顺畅）", scores:[2,3,2,3,2,2],
+      labels:["不知道找谁 review","评审拖 3 天被指出","提意见后又没声","-1 merge 现象","看不到评审进度","API 限速未明"] },
+    pains:    { name:"痛点",      sub:"可观察的阻碍", cells:[
+      ["不知道找谁 review"],
+      ["拒绝理由不明确"],
+      ["评审人提了意见又消失"],
+      ["跨平台行为不一致"],
+      ["通过率不可比 · 数据缺"],
+      ["同步延迟未知"]
+    ]},
+    opps:     { name:"机会",      sub:"可观察的改进结果", cells:[
+      ["评审人推荐机制"],
+      ["拒绝模板强制"],
+      ["状态可见 + 自动续期"],
+      ["平台差异适配层"],
+      ["项目级评审看板"],
+      ["异步队列 + 失败重试"]
+    ]},
+    evidence: { name:"证据状态",  sub:"知识状态标签", cells:[
+      ["FACT · kickoff.md","FACT · kickoff.md"],
+      ["FACT · kickoff.md","AI_INFERENCE · 分配机制未给"],
+      ["FACT · kickoff.md"],
+      ["FACT · kickoff.md"],
+      ["FACT · workshop.md","AI_INFERENCE · 基线未给"],
+      ["AI_INFERENCE · 限速未知"]
+    ]}
+  },
+  /* 角色旅程（与 user-journey.md 角色旅程矩阵逐节点同源 · 7 角色 × 17 节点，一个不缺） */
+  roles: [
+    { who:"开发者", goal:"SLA 内完成评审并顺利合入", color:"#175cd3", nodes:[
+      { stage:0, behavior:"推 MR + @ 评审人",        touch:"与评审人",           pain:"评审拖 3 天未知",        path:"normal",      ev:"FACT · kickoff.md" },
+      { stage:2, behavior:"收到 review 意见后改代码", touch:"与评审人",           pain:"评审人提了意见又消失",   path:"exception",   ev:"FACT · kickoff.md" },
+      { stage:2, behavior:"改完 push",               touch:"与评审人",           pain:"评审人再次拖期",         path:"recovery",    ev:"FACT · kickoff.md" },
+      { stage:3, behavior:"approve 后 merge",        touch:"与 GitLab/Bitbucket",pain:"跨平台行为不一致",       path:"alternative", ev:"FACT · 默认 GitLab 流程" }
+    ]},
+    { who:"评审人", goal:"SLA 内给出明确意见", color:"#0f8a4d", nodes:[
+      { stage:1, behavior:"收到 @，接手评审",         touch:"与开发者",           pain:"不确定归属与优先级",     path:"normal",      ev:"AI_INFERENCE · 分配机制未给" },
+      { stage:1, behavior:"提意见 / approve / reject",touch:"与开发者",           pain:"拒绝理由不明确",         path:"failure",     ev:"FACT · kickoff.md" },
+      { stage:2, behavior:"收到修改后跟进重审",       touch:"与开发者",           pain:"长时间没人接",           path:"alternative", ev:"FACT · kickoff.md" }
+    ]},
+    { who:"PM / QA（质量视角）", goal:"看到进度、通过率与评审人负载", color:"#b7791f", nodes:[
+      { stage:4, behavior:"打开评审报表看进度",       touch:"与开发者/评审人",    pain:"当前看不到",             path:"handoff",     ev:"FACT · workshop.md" },
+      { stage:4, behavior:"月度复盘：通过率 / 负载",  touch:"与工程总监",         pain:"数据缺",                 path:"handoff",     ev:"FACT · workshop.md" }
+    ]},
+    { who:"QA / 安全（闭环视角）", goal:"评审结果闭环与缺陷可追溯", color:"#0e7490", nodes:[
+      { stage:5, behavior:"看到评审结果，闭环确认",   touch:"与开发者",           pain:"通过率不可比",           path:"normal",      ev:"FACT · workshop.md" },
+      { stage:5, behavior:"拉缺陷数据 vs 评审人",     touch:"与数据工程师",       pain:"缺数据",                 path:"recovery",    ev:"FACT · workshop.md" }
+    ]},
+    { who:"安全工程师", goal:"评审结果同步 Jira 且可审计", color:"#c2410c", nodes:[
+      { stage:5, behavior:"评审结果推 Jira",          touch:"与 PM",              pain:"API 限速未明",           path:"exception",   ev:"AI_INFERENCE · 限速未知" },
+      { stage:5, behavior:"按 issue 查评审记录",      touch:"与 QA",              pain:"同步延迟未知",           path:"failure",     ev:"AI_INFERENCE · 延迟未给" }
+    ]},
+    { who:"数据工程师", goal:"评审事件入仓并可建模", color:"#7f56d9", nodes:[
+      { stage:4, behavior:"接评审事件到数据仓库",     touch:"与 QA",              pain:"接入规范未明",           path:"normal",      ev:"AI_INFERENCE · 规范未给" },
+      { stage:4, behavior:"建模：时长 / 工作量 / 缺陷",touch:"与 PM",             pain:"缺基线",                 path:"normal",      ev:"AI_INFERENCE · 基线未给" }
+    ]},
+    { who:"工程总监", goal:"跨团队 SLA 可比，改造资源可决策", color:"#b7791f", nodes:[
+      { stage:5, behavior:"看跨团队 SLA",             touch:"与 PM",              pain:"海外团队 SOP 是否一致未知", path:"alternative", ev:"UNKNOWN · 海外 SOP 未给" },
+      { stage:5, behavior:"决定谁投入改造",           touch:"与各负责人",         pain:"资源约束未知",           path:"handoff",     ev:"UNKNOWN · 资源未给" }
+    ]}
+  ],
+  swim: {
+    lanes: [
+      { who:"开发者",        goal:"SLA 内完成评审并顺利合入",       color:"#175cd3" },
+      { who:"评审人",        goal:"SLA 内给出明确意见",             color:"#0f8a4d" },
+      { who:"PM / QA",       goal:"看到进度、通过率与负载",         color:"#b7791f" },
+      { who:"QA / 安全",     goal:"评审闭环与缺陷可追溯",           color:"#0e7490" },
+      { who:"安全工程师",    goal:"评审结果同步 Jira 且可审计",     color:"#c2410c" },
+      { who:"数据工程师",    goal:"评审事件入仓并可建模",           color:"#7f56d9" },
+      { who:"工程总监",      goal:"跨团队 SLA 可比，改造可决策",    color:"#b7791f" }
+    ],
+    // node: [lane, stage, 类型, 标题, 补充, 路径类型]
+    nodes: [
+      [0,0,"start","推送 MR + @评审人","评审拖 3 天未知","normal"],
+      [0,2,"node","收到意见改代码","评审人提了意见又消失","exception"],
+      [0,2,"node","改完 push","评审人再次拖期","recovery"],
+      [0,3,"end","approve → merge","跨平台行为不一致","alternative"],
+      [1,1,"decision","接手评审","归属与优先级?","normal"],
+      [1,1,"node","提意见 / approve / reject","拒绝理由不明确","failure"],
+      [1,2,"node","跟进重审","长时间没人接","alternative"],
+      [2,4,"node","看评审进度","当前看不到","handoff"],
+      [2,4,"node","月度复盘","通过率 / 负载 · 数据缺","handoff"],
+      [3,5,"node","评审闭环确认","通过率不可比","normal"],
+      [3,5,"node","缺陷追溯","缺数据","recovery"],
+      [4,5,"exc","审计同步推 Jira","API 限速未明","exception"],
+      [4,5,"node","按 issue 合规追溯","同步延迟未知","failure"],
+      [5,4,"node","评审事件入仓","接入规范未明","normal"],
+      [5,4,"node","数据建模","时长/工作量/缺陷 · 缺基线","normal"],
+      [6,5,"node","看跨团队 SLA","海外 SOP 一致性未知","alternative"],
+      [6,5,"node","决策改造资源","资源约束未知","handoff"]
+    ],
+    edges: [
+      ["n0","n4","normal","推 MR"],
+      ["n4","n5","normal","接手"],
+      ["n5","n1","fail","提意见"],
+      ["n1","n2","back",""],
+      ["n2","n6","normal","重推"],
+      ["n6","n3","normal","approve"],
+      ["n3","n7","normal","进度"],
+      ["n7","n8","normal","复盘"],
+      ["n3","n13","normal","事件"],
+      ["n13","n14","normal","建模"],
+      ["n3","n9","normal","闭环"],
+      ["n9","n10","back","追溯"],
+      ["n3","n11","normal","同步"],
+      ["n11","n12","normal","审计"],
+      ["n8","n15","normal","上报"],
+      ["n15","n16","normal","决策"]
+    ]
+  },
+  states: [
+    { id:"s0", name:"待评审", sub:"推送 MR 后", type:"initial", trig:"推送 MR" },
+    { id:"s1", name:"评审中", sub:"评审人接手", type:"", trig:"评审人接手" },
+    { id:"s2", name:"需修改", sub:"reject / 提意见", type:"loopback", trig:"reject" },
+    { id:"s3", name:"已通过", sub:"approve", type:"", trig:"approve" },
+    { id:"s4", name:"已合并", sub:"merge + 统计同步", type:"final", trig:"merge" }
+  ],
+  stateEdges: [
+    { from:"s0", to:"s1", label:"接手" },
+    { from:"s1", to:"s2", label:"提意见" },
+    { from:"s1", to:"s3", label:"approve" },
+    { from:"s3", to:"s4", label:"merge" }
+  ],
+  stateLoops: [
+    { name:"拖期", desc:"评审中 → 超过 SLA → 逾期升级 → 回到评审中（exception + recovery）" },
+    { name:"修改回路", desc:"需修改 → 开发者改完 push → 回到评审中（recovery）" }
+  ]
+};
+
+/* ===================== 渲染 · 旅程地图（里程碑路径 · 支持角色切换） ===================== */
+const PATH_SCORE = { normal:3, alternative:3, handoff:2, exception:2, recovery:2, failure:1 };
+
+function emoCurve(scores, root, H, W){
+  const n = scores.length;
+  const cx = i => (i+0.5)*W/n;
+  const pts = scores.map((v,i)=>({ x:cx(i), y:H-28-(v-1)/4*(H-62) }));
+  const smooth = p => {
+    let d=`M ${p[0].x} ${p[0].y}`;
+    for(let i=0;i<p.length-1;i++){
+      const a=p[i], b=p[i+1], mx=(a.x+b.x)/2;
+      d+=` C ${mx} ${a.y}, ${mx} ${b.y}, ${b.x} ${b.y}`;
+    }
+    return d;
+  };
+  const line = smooth(pts);
+  const area = line + ` L ${pts[n-1].x} ${H} L ${pts[0].x} ${H} Z`;
+  const cc = v => v>=4?"#0f8a4d":v===3?"#e3a008":"#c0392b";
+  const grid = [1,2,3,4,5].map(s=>{
+    const y=H-28-(s-1)/4*(H-62);
+    return `<line x1="0" y1="${y}" x2="${W}" y2="${y}" stroke="#eef1f6" stroke-dasharray="4 6"/>`;
+  }).join("");
+  const dots = pts.map((p,i)=>`
+    <circle cx="${p.x}" cy="${p.y}" r="7" fill="#fff" stroke="${cc(scores[i])}" stroke-width="3.5"/>`).join("");
+  const svg = document.getElementById("jm-emo-svg");
+  svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+  svg.innerHTML = `
+    <defs><linearGradient id="eg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#c0392b" stop-opacity=".12"/><stop offset="1" stop-color="#c0392b" stop-opacity="0"/>
+    </linearGradient></defs>
+    ${grid}
+    <path d="${area}" fill="url(#eg)"/>
+    <path d="${line}" fill="none" stroke="#a8b3c7" stroke-width="2.5"/>
+    ${dots}`;
+}
+
+function evBadge(ev){
+  return `<span class="badge ${ev.startsWith("FACT")?"fact":ev.startsWith("AI")?"inf":"unk"}">${ev}</span>`;
+}
+
+function renderMap(roleIdx){
+  const S = DATA.stages, R = DATA.rows;
+  const root = document.getElementById("jm");
+  const H = 165;
+  const goalBar = document.getElementById("role-goal");
+
+  // ---- 角色视图 ----
+  if (roleIdx >= 0){
+    const role = DATA.roles[roleIdx];
+    root.style.setProperty("--rc", role.color);
+    goalBar.style.display = "";
+    goalBar.style.setProperty("--rc", role.color);
+    goalBar.innerHTML = `<b>${role.who}</b> 的旅程目标 — ${role.goal} · 共 ${role.nodes.length} 个节点 · 顺畅度由路径类型推导 <span class="badge inf">AI_INFERENCE</span>`;
+
+    const stageIds = [...new Set(role.nodes.map(nd=>nd.stage))].sort((a,b)=>a-b);
+    const stages = stageIds.map(i=>S[i]);
+    const n = stages.length;
+    root.style.setProperty("--n", n);
+
+    const stations = stages.map((s,k)=>`
+      <div class="jm-station">
+        <div class="st-dot" style="--c:${s.color}">${stageIds[k]+1}</div>
+        <div class="st-name">${s.name}</div>
+        <div class="st-trig">${s.trig}</div>
+      </div>`).join("");
+
+    const scores = stageIds.map(sid=>{
+      const nds = role.nodes.filter(nd=>nd.stage===sid);
+      return Math.min(...nds.map(nd=>PATH_SCORE[nd.path]||3));
+    });
+    const labels = stageIds.map(sid=>{
+      const nds = role.nodes.filter(nd=>nd.stage===sid);
+      return nds.map(nd=>nd.pain).join(" · ");
+    });
+    const emoLabels = scores.map((v,k)=>`
+      <div class="emo-lab"><b style="color:${v>=4?"#0f8a4d":v===3?"#e3a008":"#c0392b"}">${v}</b><span>${labels[k]}</span></div>`).join("");
+
+    const cols = stages.map((s,k)=>{
+      const nds = role.nodes.filter(nd=>nd.stage===stageIds[k]);
+      return `<div class="jm-col" style="--c:${s.color}">
+        ${nds.map(nd=>`
+          <div class="jm-card" style="--k:${nd.path==="failure"||nd.path==="exception"?"#c0392b":nd.path==="recovery"?"#98a4b8":s.color}">
+            <div class="n-title">${nd.behavior}</div>
+            <div><span class="path-tag ${nd.path}">${nd.path}</span></div>
+            <div class="k" style="margin-top:5px">触点 · ${nd.touch}</div>
+            <div>阻碍 · ${nd.pain}</div>
+            <div>${evBadge(nd.ev)}</div>
+          </div>`).join("")}
+      </div>`;
+    }).join("");
+
+    root.innerHTML = `
+      <div class="jm-stations">${stations}</div>
+      <svg class="jm-emo" id="jm-emo-svg" viewBox="0 0 1000 ${H}" aria-hidden="true"></svg>
+      <div class="jm-emo-row">${emoLabels}</div>
+      <div class="jm-scroll"><div class="jm-cols">${cols}</div></div>`;
+    emoCurve(scores, root, H, root.clientWidth || 1000);
+    return;
+  }
+
+  // ---- 综合视角 ----
+  goalBar.style.display = "none";
+  const n = S.length;
+  root.style.setProperty("--n", n);
+
+  const stations = S.map((s,i)=>`
+    <div class="jm-station">
+      <div class="st-dot" style="--c:${s.color}">${i+1}</div>
+      <div class="st-name">${s.name}</div>
+      <div class="st-trig">${s.trig}</div>
+    </div>`).join("");
+
+  const emoLabels = R.emotion.scores.map((v,i)=>`
+    <div class="emo-lab"><b style="color:${v>=4?"#0f8a4d":v===3?"#e3a008":"#c0392b"}">${v}</b><span>${R.emotion.labels[i]}</span></div>`).join("");
+
+  const cols = S.map((s,i)=>{
+    const ev = R.evidence.cells[i];
+    const evList = Array.isArray(ev)? ev : [ev];
+    const badges = evList.map(evBadge).join(" ");
+    return `<div class="jm-col" style="--c:${s.color}">
+      <div class="jm-card c-act"><div class="k">行为</div>${R.actions.cells[i]}</div>
+      <div class="jm-card c-touch"><div class="k">触点</div>${R.touch.cells[i]}</div>
+      <div class="jm-card c-pain"><div class="k">痛点</div>${R.pains.cells[i]}</div>
+      <div class="jm-card c-opp"><div class="k">机会</div>${R.opps.cells[i]}</div>
+      <div class="jm-card c-ev"><div class="k">证据</div>${badges}</div>
+    </div>`;
+  }).join("");
+
+  root.innerHTML = `
+    <div class="jm-stations">${stations}</div>
+    <svg class="jm-emo" id="jm-emo-svg" viewBox="0 0 1000 ${H}" aria-hidden="true"></svg>
+    <div class="jm-emo-row">${emoLabels}</div>
+    <div class="jm-scroll"><div class="jm-cols">${cols}</div></div>`;
+  emoCurve(R.emotion.scores, root, H, root.clientWidth || 1000);
+}
+
+/* 角色切换条初始化 */
+(function initRolebar(){
+  const bar = document.getElementById("rolebar");
+  DATA.roles.forEach((r,i)=>{
+    const b = document.createElement("button");
+    b.className = "rolechip";
+    b.style.setProperty("--rc", r.color);
+    b.dataset.role = i;
+    b.innerHTML = `${r.who}<small>${r.nodes.length} 个节点</small>`;
+    bar.appendChild(b);
+  });
+  bar.addEventListener("click", e=>{
+    const chip = e.target.closest(".rolechip");
+    if (!chip) return;
+    bar.querySelectorAll(".rolechip").forEach(x=>x.classList.toggle("active", x===chip));
+    renderMap(+chip.dataset.role);
+  });
+  window.addEventListener("resize", ()=>{
+    const chip = document.querySelector(".rolechip.active");
+    renderMap(chip ? +chip.dataset.role : -1);
+  });
+})();
+renderMap(-1);
+
+/* ===================== 渲染 · 泳道流程图 ===================== */
+(function renderSwim(){
+  const { lanes, nodes, edges } = DATA.swim;
+  const S = DATA.stages;
+  const grid = document.getElementById("sw-grid");
+  let html = `<div class="sw-hd blank"></div>` + S.map(s=>`<div class="sw-hd">${s.name}</div>`).join("");
+  const byCell = {};
+  nodes.forEach((nd,i)=>{
+    const [lane, stage, type, title, meta, path] = nd;
+    const key = lane+"-"+stage;
+    byCell[key] = byCell[key] || [];
+    byCell[key].push({ i, type, title, meta, path, lane, stage });
+  });
+  lanes.forEach((ln, li)=>{
+    html += `<div class="sw-lane-label"><span class="lbar" style="background:${ln.color}"></span><span class="who">${ln.who}</span><span class="goal">${ln.goal}</span></div>`;
+    S.forEach((s,si)=>{
+      const list = byCell[li+"-"+si] || [];
+      html += `<div class="sw-cell">${list.map(o=>`
+        <div class="sw-node ${o.type}" id="n${o.i}">
+          <div class="n-title">${o.title}</div>
+          <div class="n-meta">${o.meta}</div>
+          <span class="n-path">${o.path}</span>
+        </div>`).join("")}</div>`;
+    });
+  });
+  grid.innerHTML = html;
+
+  // 连线（正交 L 形，基于节点实际坐标）
+  function draw(){
+    const svg = document.getElementById("sw-edges");
+    const wrap = document.getElementById("sw");
+    const wr = wrap.getBoundingClientRect();
+    svg.setAttribute("width", wrap.scrollWidth);
+    svg.setAttribute("height", wrap.scrollHeight);
+    svg.style.width = wrap.scrollWidth+"px"; svg.style.height = wrap.scrollHeight+"px";
+    let out = `<defs>
+      <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#98a4b8"/></marker>
+      <marker id="ah-exc" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#b54708"/></marker>
+      <marker id="ah-fail" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#c0392b"/></marker>
+    </defs>`;
+    edges.forEach(([from,to,kind,label])=>{
+      const a = document.getElementById(from).getBoundingClientRect();
+      const b = document.getElementById(to).getBoundingClientRect();
+      const ax = a.right-wr.left+scrollXAdj(), ay = a.top+a.height/2-wr.top;
+      let bx = b.left-wr.left, by = b.top+b.height/2-wr.top;
+      const below = by > ay + 20;
+      let d;
+      if (Math.abs(a.top-b.top) < 40) { // 同行（含同格堆叠节点）：直接水平
+        by = ay;
+        d = `M ${ax} ${ay} L ${bx-2} ${by}`;
+      } else if (below) { // 向下：右出 → 下 → 左入
+        d = `M ${a.right-wr.left+scrollXAdj()} ${ay} L ${bx-26} ${ay} L ${bx-26} ${by-14} L ${bx-2} ${by-14}`;
+        by = by-14;
+      } else { // 向上（返工）：左出 → 上 → 右入
+        d = `M ${a.left-wr.left+scrollXAdj()} ${ay} L ${bx+30} ${ay} L ${bx+30} ${by} L ${bx+b.width+2-wr.left} ${by}`;
+        bx = bx+b.width;
+      }
+      const cls = kind==="exc"?"e-exc":kind==="fail"?"e-fail":"e-normal";
+      const mk  = kind==="exc"?"ah-exc":kind==="fail"?"ah-fail":"ah";
+      out += `<path class="${cls}" d="${d}" marker-end="url(#${mk})"/>`;
+      if (label){
+        const lx = (ax+bx)/2, ly = below? by-24 : ay-8;
+        out += `<text class="lbl-${kind==="exc"?"exc":kind==="fail"?"fail":"n"}" x="${lx}" y="${ly}" text-anchor="middle">${label}</text>`;
+      }
+    });
+    svg.innerHTML = out;
+  }
+  function scrollXAdj(){ return 0; }
+  window.__swDraw = draw; // 视图隐藏时 getBoundingClientRect 为 0，切到该视图后需重画
+  requestAnimationFrame(draw);
+  window.addEventListener("resize", draw);
+})();
+
+/* ===================== 渲染 · 状态流 ===================== */
+(function renderState(){
+  const lane = document.getElementById("st-lane");
+  const { states, stateEdges } = DATA;
+  const edgeMap = {};
+  stateEdges.forEach(e=>{ edgeMap[e.to] = e; });
+  lane.innerHTML = states.map(s=>{
+    const e = edgeMap[s.id];
+    const cls = { initial:"initial", final:"final", loopback:"loopback", warn:"warn" }[s.type] || "";
+    return `
+      <div class="st-node">
+        <div class="st-badges"></div>
+        <div class="st-capsule ${cls}">${s.name}<span class="st-sub">${s.sub}</span></div>
+        <div class="st-badges"><span class="badge fact">${s.trig}</span></div>
+      </div>
+      ${s!==states[states.length-1] ? `<div class="st-arrow">${e?`<span class="a-lbl">${e.label}</span>`:""}</div>` : ""}`;
+  }).join("");
+
+  document.getElementById("st-cards").innerHTML = DATA.stateLoops.map(l=>`
+    <div class="st-card" style="border-color:var(--purple);background:var(--purple-soft)">
+      <h4 style="color:var(--purple)">↩ ${l.name}</h4><p>${l.desc}</p>
+    </div>`).join("");
+})();
+
+/* ===================== 视图切换 ===================== */
+document.querySelectorAll(".tab").forEach(t=>{
+  t.addEventListener("click", ()=>{
+    document.querySelectorAll(".tab").forEach(x=>x.classList.toggle("active", x===t));
+    document.querySelectorAll(".view").forEach(v=>v.classList.toggle("active", v.id==="view-"+t.dataset.view));
+    if (t.dataset.view==="swim" && window.__swDraw) requestAnimationFrame(window.__swDraw);
+  });
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,365 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>用户旅程 · 全类型图表工作室</title>
+  <style>
+    :root { color-scheme: light; --ink:#202124; --muted:#667085; --line:#d9dee7; --paper:#fff; --wash:#f5f7fa; --accent:#175cd3; --accent-soft:#e8f0fd; --code:#0f172a; --code-bg:#f8fafc; }
+    * { box-sizing:border-box; }
+    body { margin:0; font:14px/1.55 system-ui,-apple-system,"Segoe UI",sans-serif; color:var(--ink); background:var(--wash); }
+    header { padding:26px clamp(16px,4vw,44px) 18px; background:var(--paper); border-bottom:1px solid var(--line); }
+    h1 { margin:0 0 4px; font-size:22px; }
+    header p { margin:0; color:var(--muted); }
+    main { max-width:1240px; margin:0 auto; padding:18px clamp(16px,4vw,44px) 48px; }
+    .tabs { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:16px; }
+    .tab { padding:7px 13px; border:1px solid var(--line); border-radius:999px; background:var(--paper); color:var(--ink); cursor:pointer; font:inherit; transition:.12s; }
+    .tab:hover { border-color:var(--accent); color:var(--accent); }
+    .tab.active { background:var(--accent); border-color:var(--accent); color:#fff; }
+    .panel { display:none; }
+    .panel.active { display:grid; grid-template-columns:minmax(0,360px) minmax(0,1fr); gap:16px; align-items:start; }
+    .codebox { background:var(--paper); border:1px solid var(--line); border-radius:8px; overflow:hidden; }
+    .codebox label { display:block; padding:9px 12px; background:var(--wash); border-bottom:1px solid var(--line); color:var(--muted); font-size:12px; }
+    textarea { width:100%; min-height:380px; border:0; resize:vertical; padding:12px; font:12px/1.55 ui-monospace,SFMono-Regular,Menlo,monospace; color:var(--code); background:var(--code-bg); outline:none; white-space:pre; }
+    .renderbox { background:var(--paper); border:1px solid var(--line); border-radius:8px; overflow:auto; min-height:420px; padding:18px; }
+    .renderbox svg { max-width:100%; height:auto; }
+    .actions { display:flex; gap:8px; margin-top:10px; }
+    .actions button { min-height:34px; padding:6px 14px; border:1px solid var(--line); border-radius:6px; background:var(--paper); color:var(--accent); cursor:pointer; font:inherit; }
+    .actions button.primary { background:var(--accent); border-color:var(--accent); color:#fff; }
+    .err { display:none; margin-top:10px; padding:10px 12px; border:1px solid #f5c28e; border-radius:6px; background:#fff8f2; color:#b54708; font-size:12px; white-space:pre-wrap; }
+    .hint { color:var(--muted); font-size:12px; margin:10px 0 0; }
+    @media (max-width:760px){ .panel.active { grid-template-columns:1fr; } textarea { min-height:220px; } }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>用户旅程 · 全类型图表工作室</h1>
+    <p>基于 Mermaid.js(本地打包,离线可用) · 覆盖 11 种图类型 · 左编辑右渲染,改完点「渲染」即时更新。</p>
+  </header>
+  <main>
+    <nav class="tabs" id="tabs" aria-label="图类型"></nav>
+    <div id="panels"></div>
+  </main>
+
+  <script src="./lib/mermaid.min.js"></script>
+  <script>
+    // ===== 各图类型源码(预填充 UJ-DEMO-001 · 内部代码评审系统) =====
+    const DIAGRAMS = {
+
+      journey: {
+        label: "用户旅程图",
+        src: `journey
+  title 内部代码评审 · 用户旅程(UJ-DEMO-001)
+  section MR 推送
+    推送 MR 并 @ 评审人: 3: 开发者
+    不知道找谁 review: 2: 开发者
+  section 评审处理
+    评审人接手评审: 3: 评审人
+    提意见 / approve / reject: 4: 评审人
+    拒绝理由不明确: 2: 评审人
+  section 反馈落地
+    收到 review 意见: 3: 开发者
+    改完重新 push: 3: 开发者
+    评审人提了意见又消失: 2: 开发者
+  section 合入主线
+    approve 后 merge: 4: 开发者
+    跨平台行为不一致: 2: 开发者
+  section 统计同步
+    PM 看评审进度: 2: PM
+    月度复盘看通过率: 3: PM, 工程总监
+    缺陷追溯: 2: QA, 数据工程师
+  section 审计与合规
+    评审结果推 Jira: 3: 安全工程师
+    API 限速未明: 2: 安全工程师`
+      },
+
+      flowchart: {
+        label: "流程图",
+        src: `flowchart TD
+  A([开发者完成 feature branch]) --> B[推送 MR 并 @ 评审人]
+  B --> C{评审人是否在 SLA 内处理?}
+  C -- 是 --> D[approve / reject]
+  C -- 否 --> E[评审拖期 · 逾期升级]
+  E --> C
+  D -- reject --> F[拒绝理由不明确]
+  F --> G[开发者改代码]
+  G --> B
+  D -- approve --> H[合入主线 merge]
+  H --> I[统计同步]
+  I --> J([旅程闭环])
+  style A fill:#e8f0fd,stroke:#175cd3
+  style J fill:#e8f0fd,stroke:#175cd3
+  style E fill:#fff8f2,stroke:#b54708
+  style F fill:#fff8f2,stroke:#b54708`
+      },
+
+      swimlane: {
+        label: "泳道图",
+        src: `flowchart LR
+  subgraph L1[开发者]
+    A1[推送 MR 并 @ 评审人]
+    A2[收到 review 意见]
+    A3[改完重新 push]
+    A4[approve 后 merge]
+  end
+  subgraph L2[评审人]
+    B1[接手评审]
+    B2[提意见 / approve / reject]
+    B3[跟进重审]
+  end
+  subgraph L3[PM / QA / 数据]
+    C1[看评审进度]
+    C2[月度复盘]
+    C3[缺陷追溯]
+  end
+  subgraph L4[安全]
+    D1[评审结果推 Jira]
+  end
+  A1 --> B1
+  B1 --> B2
+  B2 --> A2
+  A2 --> A3
+  A3 --> B3
+  B3 --> B2
+  B2 --> A4
+  A4 --> C1
+  C1 --> C2
+  C2 --> C3
+  B2 --> D1
+  style L1 fill:#e8f0fd,stroke:#175cd3
+  style L2 fill:#e6f4ea,stroke:#188038
+  style L3 fill:#fef7e0,stroke:#b06000
+  style L4 fill:#fce8e6,stroke:#c5221f`
+      },
+
+      sequence: {
+        label: "时序图",
+        src: `sequenceDiagram
+  participant Dev as 开发者
+  participant Rev as 评审人
+  participant PM as PM
+  participant Sec as 安全工程师
+  Dev->>Rev: 推送 MR 并 @ 评审人
+  Note over Rev: 评审拖 3 天未知(风险)
+  Rev-->>Dev: 提意见 / approve / reject
+  alt reject
+    Rev->>Dev: 拒绝理由不明确
+    Dev->>Dev: 改代码
+    Dev->>Rev: 改完重新 push
+  else approve
+    Rev->>Dev: approve
+    Dev->>PM: merge 后统计同步
+  end
+  Rev->>Sec: 评审结果推 Jira
+  Sec-->>PM: API 限速未明(风险)`
+      },
+
+      state: {
+        label: "状态图",
+        src: `stateDiagram-v2
+  [*] --> 待评审: 推送 MR
+  待评审 --> 评审中: 评审人接手
+  评审中 --> 需修改: reject / 提意见
+  评审中 --> 已通过: approve
+  需修改 --> 评审中: 开发者改完 push
+  评审中 --> 拖期: 超过 SLA 未处理
+  拖期 --> 评审中: 逾期升级
+  已通过 --> 已合并: merge
+  已合并 --> [*]: 统计同步`
+      },
+
+      gantt: {
+        label: "甘特图",
+        src: `gantt
+  title 代码评审 SLA 计划(示意)
+  dateFormat YYYY-MM-DD
+  axisFormat %m-%d
+  section 评审流程
+  推送 MR         :a1, 2026-09-01, 1d
+  评审人接手       :a2, after a1, 2d
+  评审处理         :a3, after a2, 3d
+  反馈落地         :a4, after a3, 2d
+  section 同步
+  merge 统计同步    :b1, after a4, 1d
+  Jira 审计同步    :b2, after a3, 2d`
+      },
+
+      timeline: {
+        label: "时间线",
+        src: `timeline
+  title 用户旅程关键阶段
+  MR 推送 : 推 MR 并 @ 评审人 : 不知道找谁 review
+  评审处理 : 评审人接手 : 提意见 / approve / reject
+  反馈落地 : 开发者改代码 : 评审人拖期
+  合入主线 : approve 后 merge : 跨平台不一致
+  统计同步 : PM 看进度 : 月度复盘
+  审计合规 : 结果推 Jira : API 限速`
+      },
+
+      mindmap: {
+        label: "思维导图",
+        src: `mindmap
+  root((代码评审旅程))
+    MR 推送
+      推 MR 并 @ 评审人
+      痛点: 不知道找谁
+    评审处理
+      approve / reject
+      痛点: 拖 3 天
+    反馈落地
+      改完 push
+      痛点: 意见后消失
+    合入主线
+      merge
+      痛点: 跨平台不一致
+    统计同步
+      PM 看进度
+      数据工程师入仓
+    审计合规
+      Jira 同步
+      API 限速`
+      },
+
+      pie: {
+        label: "饼图",
+        src: `pie showData
+  title 评审路径占比(示意)
+  "normal 正常路径" : 44
+  "alternative 替代路径" : 22
+  "exception 异常路径" : 14
+  "failure 失败路径" : 12
+  "handoff 交接路径" : 8`
+      },
+
+      er: {
+        label: "ER 图",
+        src: `erDiagram
+  DEVELOPER ||--o{ MR : "pushes"
+  MR ||--o{ REVIEW : "receives"
+  REVIEWER ||--o{ REVIEW : "gives"
+  REVIEW }o--|| MR : "decides"
+  MR ||--o{ SYNC : "syncs"
+  SYNC }o--|| JIRA : "to"
+  MR ||--o{ STAT : "feeds"
+  STAT }o--|| WAREHOUSE : "into"`
+      },
+
+      class: {
+        label: "类图",
+        src: `classDiagram
+  class 开发者 {
+    +name
+    +pushMR()
+    +fixCode()
+    +merge()
+  }
+  class 评审人 {
+    +name
+    +review()
+    +approve()
+    +reject()
+  }
+  class 评审事件 {
+    +mrId
+    +status
+    +slaDeadline
+    +owner
+  }
+  class 安全审计 {
+    +jiraSync()
+    +complianceCheck()
+  }
+  开发者 --> 评审事件
+  评审人 --> 评审事件
+  评审事件 --> 安全审计 : 触发同步`
+      },
+
+      git: {
+        label: "Git 图",
+        src: `gitGraph
+  commit id: "推送 MR"
+  branch review
+  commit id: "评审意见"
+  commit id: "改后重推"
+  checkout main
+  merge review id: "approve merge"
+  commit id: "统计同步"`
+      }
+    };
+
+    // ===== 界面组装 =====
+    const tabsEl = document.getElementById("tabs");
+    const panelsEl = document.getElementById("panels");
+    const keys = Object.keys(DIAGRAMS);
+    let active = keys[0];
+
+    keys.forEach((key, i) => {
+      const btn = document.createElement("button");
+      btn.className = "tab" + (i === 0 ? " active" : "");
+      btn.textContent = DIAGRAMS[key].label;
+      btn.dataset.key = key;
+      btn.addEventListener("click", () => switchTo(key));
+      tabsEl.appendChild(btn);
+
+      const panel = document.createElement("section");
+      panel.className = "panel" + (i === 0 ? " active" : "");
+      panel.id = "panel-" + key;
+      panel.innerHTML = `
+        <div class="codebox">
+          <label for="src-${key}">Mermaid 源码(可编辑)</label>
+          <textarea id="src-${key}" spellcheck="false">${DIAGRAMS[key].src.replace(/</g, "&lt;")}</textarea>
+          <div class="actions">
+            <button class="primary" data-render="${key}">渲染</button>
+          </div>
+        </div>
+        <div>
+          <div class="renderbox" id="out-${key}"></div>
+          <div class="err" id="err-${key}"></div>
+          <p class="hint">提示:渲染出的 SVG 可直接右键另存为图片,或浏览器打印导出 PDF。</p>
+        </div>`;
+      panelsEl.appendChild(panel);
+      panel.querySelector(`[data-render="${key}"]`).addEventListener("click", () => render(key));
+    });
+
+    function switchTo(key) {
+      active = key;
+      document.querySelectorAll(".tab").forEach(b => b.classList.toggle("active", b.dataset.key === key));
+      document.querySelectorAll(".panel").forEach(p => p.classList.toggle("active", p.id === "panel-" + key));
+      if (!document.getElementById("out-" + key).innerHTML.trim()) render(key);
+    }
+
+    async function render(key) {
+      const src = document.getElementById("src-" + key).value;
+      const out = document.getElementById("out-" + key);
+      const err = document.getElementById("err-" + key);
+      err.style.display = "none";
+      out.innerHTML = "";
+      try {
+        const { svg } = await mermaid.render("m-" + key, src);
+        out.innerHTML = svg;
+      } catch (e) {
+        err.style.display = "block";
+        err.textContent = "渲染失败:" + (e && e.message ? e.message : String(e));
+      }
+    }
+
+    mermaid.initialize({
+      startOnLoad: false,
+      theme: "base",
+      securityLevel: "loose",
+      themeVariables: {
+        fontFamily: 'system-ui, -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif',
+        primaryColor: "#e8f0fd",
+        primaryBorderColor: "#175cd3",
+        primaryTextColor: "#202124",
+        lineColor: "#667085",
+        clusterBkg: "#f5f7fa",
+        clusterBorder: "#d9dee7",
+        edgeLabelBackground: "#ffffff"
+      }
+    });
+
+    render(active);
+  </script>
+</body>
+</html>

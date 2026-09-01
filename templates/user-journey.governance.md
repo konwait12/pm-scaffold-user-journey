@@ -18,6 +18,20 @@ board_artifact: ""
 - 角色与阶段是否足够：待确认
 - 是否生成 HTML 审阅板：待确认；若生成，记录文件名和版本。
 
+### 已加载 reference 清单（v1.1 必填 · 校验器强制检查）
+
+| reference | 状态 | 跳过理由 |
+|---|---|---|
+| references/output-contract.md | 已加载 | — |
+| references/audit-checklist.md | 已加载 | — |
+| references/anti-patterns.md | 已加载 | — |
+| references/journey-matrix-and-mot.md | 加载 / 跳过 | （跳过时必填≥10 汉字理由） |
+| references/journey-error-recovery-and-metrics.md | 加载 / 跳过 | （跳过时必填≥10 汉字理由） |
+| references/journey-behavior-vs-feature-jtbd.md | 加载 / 跳过 | （跳过时必填≥10 汉字理由） |
+| references/html-journey-board.md | 加载 / 跳过 | （跳过时必填≥10 汉字理由） |
+| references/reviewer-checklist.md | 加载 / 跳过 | （跳过时必填≥10 汉字理由） |
+> 校验器会核对:必选 reference 必须出现在"已加载"列;跳过的 reference 必须有 ≥ 10 汉字且非占位的理由。
+
 ## 项目专属基线读取记录（可选）
 
 > 仅当本次工作指定了项目专属基线材料时才填写。把基线原文视为来源，AI 摘要不得代替原文。
