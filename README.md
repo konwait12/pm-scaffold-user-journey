@@ -82,7 +82,7 @@ python3 skills/user-journey/scripts/validate_artifact.py user-journey.md --json
 ### 5. 打开 HTML 审阅板
 
 ```bash
-open assets/user-journey-board.html
+open skills/user-journey/assets/user-journey-board.html
 ```
 
 把旅程节点粘贴或加载到 HTML 板的 `<script>` 数据区,可在浏览器里按角色/阶段/路径筛选、展开证据与未知项。
@@ -96,7 +96,7 @@ your-project/
 └── user-journey.board.html         # 可选:单文件、零网络、按角色/阶段/路径筛选的审阅板
 ```
 
-模板见 [`templates/`](templates/) 目录。
+模板见 [`skills/user-journey/templates/`](skills/user-journey/templates/) 目录，HTML 画板模板见 [`skills/user-journey/assets/`](skills/user-journey/assets/)。
 
 ## 8 步工作循环
 

@@ -1,6 +1,6 @@
 # HTML 旅程审阅板
 
-HTML 审阅板是 `user-journey.md` 的可视化阅读层，借鉴本地 `flow2demo` / `interactive-demo-factory` 的单文件、零网络、可点击审阅能力。可从 `assets/user-journey-board.html` 复制骨架并只替换数据块。它不替代 Markdown，不是 page-design，也不应引入未在来源中出现的页面、功能、文案或状态。
+HTML 审阅板是 `user-journey.md` 的可视化阅读层，借鉴本地 `flow2demo` / `interactive-demo-factory` 的单文件、零网络、可点击审阅能力。可从本 skill 内 `assets/user-journey-board.html` 复制骨架并只替换数据块。它不替代 Markdown，不是 page-design，也不应引入未在来源中出现的页面、功能、文案或状态。
 
 ## 触发与输入
 
