@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>User Journey Review Board</title>
+  <style>
+    :root { color-scheme: light; --ink:#202124; --muted:#667085; --line:#d9dee7; --paper:#fff; --wash:#f5f7fa; --accent:#175cd3; --unknown:#b54708; }
+    * { box-sizing:border-box; }
+    body { margin:0; font:14px/1.55 system-ui,-apple-system,"Segoe UI",sans-serif; color:var(--ink); background:var(--wash); }
+    header { padding:28px clamp(18px,4vw,48px) 20px; background:var(--paper); border-bottom:1px solid var(--line); }
+    h1 { margin:0 0 4px; font-size:24px; letter-spacing:0; }
+    header p { margin:0; color:var(--muted); }
+    main { max-width:1180px; margin:0 auto; padding:20px clamp(18px,4vw,48px) 48px; }
+    .controls { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; margin-bottom:20px; }
+    label { display:flex; flex-direction:column; gap:5px; color:var(--muted); font-size:12px; }
+    select,button { min-height:38px; padding:8px 10px; border:1px solid var(--line); border-radius:6px; background:var(--paper); color:var(--ink); font:inherit; }
+    button { cursor:pointer; color:var(--accent); }
+    select:focus-visible,button:focus-visible,summary:focus-visible { outline:3px solid #b2ddff; outline-offset:2px; }
+    .legend { display:flex; flex-wrap:wrap; gap:8px 14px; align-items:center; margin:-4px 0 16px; color:var(--muted); font-size:12px; }
+    .legend strong { color:var(--ink); font-weight:600; }
+    .legend-item { display:inline-flex; gap:5px; align-items:center; }
+    .legend-dot { width:9px; height:9px; border-radius:50%; background:var(--accent); }
+    .legend-dot.unknown { background:var(--unknown); }
+    .legend-dot.inference { background:#7f56d9; }
+    .summary { color:var(--muted); margin:0 0 12px; }
+    .journey { display:grid; gap:12px; }
+    article { background:var(--paper); border:1px solid var(--line); border-radius:6px; overflow:hidden; scroll-margin-top:16px; }
+    article[hidden] { display:none; }
+    .node-head { display:flex; gap:12px; align-items:flex-start; padding:16px; }
+    .step { flex:1; min-width:0; }
+    .step h2 { margin:0; font-size:16px; }
+    .meta { display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; }
+    .tag { display:inline-flex; padding:2px 7px; border:1px solid var(--line); border-radius:999px; color:var(--muted); font-size:12px; }
+    .tag.unknown { color:var(--unknown); border-color:#f5c28e; }
+    details { border-top:1px solid var(--line); padding:10px 16px; }
+    summary { cursor:pointer; color:var(--accent); }
+    dl { display:grid; grid-template-columns:120px 1fr; gap:7px 14px; margin:12px 0 2px; }
+    dt { color:var(--muted); }
+    dd { margin:0; white-space:pre-wrap; overflow-wrap:anywhere; }
+    .empty { padding:28px 0; text-align:center; color:var(--muted); }
+    @media (max-width:680px) { .controls { grid-template-columns:1fr; } dl { grid-template-columns:1fr; gap:2px; } dt { margin-top:8px; } }
+  </style>
+</head>
+<body>
+  <header>
+    <h1 id="title">用户旅程审阅板</h1>
+    <p id="subtitle">只读浏览当前 user-journey.md 中的角色、阶段、路径与证据。</p>
+  </header>
+  <main>
+    <section class="controls" aria-label="旅程筛选">
+      <label>角色<select id="role"><option value="">全部角色</option></select></label>
+      <label>阶段<select id="stage"><option value="">全部阶段</option></select></label>
+      <label>路径<select id="path"><option value="">全部路径</option></select></label>
+    </section>
+    <div class="legend" aria-label="证据状态图例">
+      <strong>证据状态</strong>
+      <span class="legend-item"><i class="legend-dot"></i>FACT / DECISION</span>
+      <span class="legend-item"><i class="legend-dot inference"></i>AI_INFERENCE</span>
+      <span class="legend-item"><i class="legend-dot unknown"></i>UNKNOWN / CONFLICT（证据不足或待裁决）</span>
+    </div>
+    <p class="summary" id="summary"></p>
+    <section class="journey" id="journey" aria-live="polite"></section>
+    <p class="empty" id="empty" hidden>当前筛选没有旅程节点。</p>
+  </main>
+  <script>
+    // Replace only this data block with nodes extracted from the current journey.
+    const BOARD = {
+      title: "用户旅程审阅板",
+      subtitle: "只读浏览当前 user-journey.md 中的角色、阶段、路径与证据。",
+      nodes: [
+        // { id:"stage-001-role-001", role:"[角色]", stage:"[阶段]", path:"normal", title:"[节点标题]", trigger:"[触发]", behavior:"[行为]", touchpoint:"[触点/交接]", result:"[结果/阻碍]", emotion:"[可观察信号或 UNKNOWN]", evidence:"[来源/位置]", status:"FACT" }
+      ]
+    };
+    const $ = id => document.getElementById(id);
+    const params = new URLSearchParams(location.search);
+    const state = { role:params.get("role") || "", stage:params.get("stage") || "", path:params.get("path") || "" };
+    const esc = value => String(value ?? "").replace(/[&<>\"]/g, ch => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[ch]));
+    const values = key => [...new Set(BOARD.nodes.map(node => node[key]).filter(Boolean))].sort();
+    function fill(id, list, selected) {
+      const select = $(id);
+      for (const value of list) select.insertAdjacentHTML("beforeend", `<option value="${esc(value)}">${esc(value)}</option>`);
+      select.value = selected;
+    }
+    function render() {
+      const visible = BOARD.nodes.filter(node => (!state.role || node.role === state.role) && (!state.stage || node.stage === state.stage) && (!state.path || node.path === state.path));
+      $("summary").textContent = `${visible.length} / ${BOARD.nodes.length} 个节点`;
+      $("journey").innerHTML = visible.map(node => {
+        const statusClass = node.status === "UNKNOWN" || node.status === "CONFLICT" ? "unknown" : node.status === "AI_INFERENCE" ? "inference" : "";
+        return `<article id="${esc(node.id)}"><div class="node-head"><div class="step"><h2>${esc(node.title || node.stage)}</h2><div class="meta"><span class="tag">${esc(node.role)}</span><span class="tag">${esc(node.stage)}</span><span class="tag">${esc(node.path)}</span><span class="tag ${statusClass}">${esc(node.status || "UNKNOWN")}</span></div></div></div><details><summary>展开证据与节点细节</summary><dl><dt>触发</dt><dd>${esc(node.trigger)}</dd><dt>行为</dt><dd>${esc(node.behavior)}</dd><dt>触点/交接</dt><dd>${esc(node.touchpoint)}</dd><dt>结果/阻碍</dt><dd>${esc(node.result)}</dd><dt>情绪信号</dt><dd>${esc(node.emotion)}</dd><dt>来源</dt><dd>${esc(node.evidence)}</dd></dl></details></article>`;
+      }).join("");
+      $("empty").hidden = visible.length !== 0;
+    }
+    function sync() {
+      const query = new URLSearchParams();
+      if (state.role) query.set("role", state.role); if (state.stage) query.set("stage", state.stage); if (state.path) query.set("path", state.path);
+      history.replaceState(null, "", `${location.pathname}${query.toString() ? "?" + query : ""}${location.hash}`); render();
+    }
+    $("title").textContent = BOARD.title; $("subtitle").textContent = BOARD.subtitle;
+    const options = { role: values("role"), stage: values("stage"), path: values("path") };
+    for (const id of Object.keys(options)) {
+      fill(id, options[id], state[id]);
+      if (state[id] && !options[id].includes(state[id])) state[id] = "";
+    }
+    for (const id of ["role","stage","path"]) $(id).addEventListener("change", event => { state[id] = event.target.value; sync(); });
+    render();
+    if (location.hash) requestAnimationFrame(() => document.querySelector(location.hash)?.scrollIntoView({ block:"start" }));
+  </script>
+</body>
+</html>

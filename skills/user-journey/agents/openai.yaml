@@ -1,0 +1,34 @@
+interface:
+  display_name: "用户旅程 (User Journey)"
+  short_description: "从原始材料构建可追溯的角色旅程，并提供独立治理记录与可选 HTML 审阅板。"
+  default_prompt: |
+    Use $user-journey to build a source-bounded lifecycle-by-role journey from
+    the raw material supplied in this task. For Project 001, first read the
+    2026-08-27 Feishu meeting baseline with lark-cli; use it as the method
+    contract, not as hidden business input. A confirmed background artifact is
+    preferred, but raw journey material may produce a clearly marked candidate.
+    Keep the human-facing user-journey.md separate from its governance companion;
+    generate the zero-dependency HTML review board only when useful. Walk the
+    Preflight → Intake → Think → Clarify → Generate → Audit → Human Gate →
+    Commit / Reflow loop. Never use outside facts or set status to `confirmed`.
+
+trigger_examples:
+  - |
+    Use this work_item when the user asks to build a user journey, journey map,
+    lifecycle flows, or "用户旅程" from confirmed project background and goals.
+  - |
+    Use this work_item when the user asks to map roles, emotions, pain points,
+    or path variants for a confirmed product direction.
+
+should_not_trigger_examples:
+  - |
+    Do NOT use this work_item for user story cards, MoSCoW prioritization, or
+    scope baseline (use user-stories).
+  - |
+    Do NOT use this work_item to silently treat an unconfirmed background as
+    fact; when upstream is not confirmed, keep the journey candidate and its
+    open questions explicit.
+  - |
+    Do NOT use this work_item for feature lists, functional flows, page designs,
+    business rules, validation rules, or acceptance criteria (route to the
+    corresponding downstream work_item).
