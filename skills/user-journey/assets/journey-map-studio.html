@@ -5,212 +5,327 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>用户旅程 · 可视化画板（HTML 原生版）</title>
 <style>
+  /* ===== Design Tokens (warm black + gold luxury) ===== */
   :root {
     color-scheme: light;
-    --ink:#1a2233; --muted:#667085; --line:#e4e8f0; --paper:#fff; --wash:#f6f8fb;
-    --accent:#175cd3; --accent-soft:#eaf1fd;
+    --ink-900:#0a0a0a; --ink-800:#171717; --ink-700:#262626; --ink-600:#404040;
+    --ink-500:#525252; --ink-400:#737373; --ink-300:#a3a3a3; --ink-200:#d4d4d4;
+    --ink-100:#e5e5e5; --ink-50:#fafafa;
+    --bg:#f7f7f5; --surface:#fff; --surface-2:#fcfcfb; --surface-hover:#fafaf9;
+    --line:#e7e5e4; --line-soft:#f0eeed; --line-strong:#d6d3d1;
+    --accent:#1c1917; --accent-soft:#f5f5f4;
+    --gold:#b8860b; --gold-soft:#fef9e7; --gold-line:#e9d8a6;
+    --fact:#1c1917; --fact-bg:#f5f5f4;
+    --inference:#7c3aed; --inference-bg:#f5f3ff;
+    --unknown:#c2410c; --unknown-bg:#fff7ed;
+    --path-normal:#1c1917; --path-alternative:#a8a29e; --path-exception:#b8860b;
+    --path-failure:#c2410c; --path-handoff:#0d9488; --path-recovery:#d6d3d1;
     --good:#0f8a4d; --good-soft:#e9f7ef;
     --warn:#b54708; --warn-soft:#fdf3e7;
     --bad:#c0392b; --bad-soft:#fdecea;
     --purple:#7f56d9; --purple-soft:#f1ecfd;
-    --radius:10px;
-    --shadow:0 1px 2px rgba(16,24,40,.05), 0 4px 14px -6px rgba(16,24,40,.08);
-    --font:system-ui,-apple-system,"PingFang SC","Microsoft YaHei","Segoe UI",sans-serif;
+    --font-sans:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+    --font-serif:"Playfair Display","Noto Serif SC",Georgia,serif;
+    --font-mono:"SF Mono","JetBrains Mono",Menlo,Consolas,monospace;
+    --shadow-sm:0 1px 2px rgba(0,0,0,0.04);
+    --shadow-md:0 2px 8px rgba(0,0,0,0.06),0 1px 2px rgba(0,0,0,0.04);
+    --shadow-lg:0 8px 24px rgba(0,0,0,0.08),0 2px 6px rgba(0,0,0,0.04);
+    --radius-sm:4px; --radius-md:6px; --radius-lg:8px; --radius-xl:12px;
   }
-  * { box-sizing:border-box; }
-  body { margin:0; font:14px/1.6 var(--font); color:var(--ink); background:var(--wash); }
+  *,*::before,*::after{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;font:14px/1.6 var(--font-sans);color:var(--ink-800);background:var(--bg);-webkit-font-smoothing:antialiased}
+  h1,h2,h3,h4{margin:0;font-weight:600;color:var(--ink-900)}
+  p{margin:0} dl{margin:0} dt{font-weight:500} dd{margin:0}
 
-  header { background:var(--paper); border-bottom:1px solid var(--line); padding:26px clamp(18px,4vw,52px) 20px; }
-  header h1 { margin:0 0 4px; font-size:23px; letter-spacing:.2px; }
-  header p { margin:0; color:var(--muted); font-size:13px; }
-  .tabs { display:flex; gap:8px; margin-top:16px; flex-wrap:wrap; }
-  .tab { padding:8px 16px; border:1px solid var(--line); border-radius:999px; background:var(--paper); cursor:pointer; font:600 13px/1 var(--font); color:var(--ink); transition:.15s; }
-  .tab:hover { border-color:var(--accent); color:var(--accent); }
-  .tab.active { background:var(--ink); border-color:var(--ink); color:#fff; }
-  .tab small { display:block; font-weight:400; opacity:.65; margin-top:3px; font-size:11px; }
+  /* ===== Top Bar ===== */
+  .topbar{position:sticky;top:0;z-index:100;background:rgba(255,255,255,.85);backdrop-filter:saturate(180%)blur(12px);-webkit-backdrop-filter:saturate(180%)blur(12px);border-bottom:1px solid var(--line)}
+  .topbar-inner{max-width:1440px;margin:0 auto;padding:14px 28px;display:flex;align-items:center;justify-content:space-between;gap:24px}
+  .brand{display:flex;align-items:center;gap:12px;min-width:0}
+  .brand-mark{width:28px;height:28px;border-radius:50%;background:var(--ink-900);display:flex;align-items:center;justify-content:center;color:#fff;font-family:var(--font-serif);font-size:13px;font-weight:600;flex-shrink:0}
+  .brand-text{min-width:0}
+  .brand-title{font-size:14px;font-weight:600;color:var(--ink-900);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .brand-sub{font-size:11px;color:var(--ink-400);letter-spacing:.04em;text-transform:uppercase;margin-top:1px}
+  .topbar-actions{display:flex;align-items:center;gap:10px;flex-shrink:0}
+  .count-badge{display:flex;align-items:center;gap:5px;padding:4px 12px;border:1px solid var(--line);border-radius:999px;font-size:12px;color:var(--ink-500);background:var(--surface)}
+  .count-badge strong{font-variant-numeric:tabular-nums;color:var(--ink-900)}
+  .view-switch{display:inline-flex;background:var(--ink-50);border:1px solid var(--line);border-radius:var(--radius-md);padding:3px;gap:2px}
+  .view-btn{padding:6px 14px;border:none;border-radius:var(--radius-sm);background:transparent;font:500 12px var(--font-sans);color:var(--ink-500);cursor:pointer;transition:.15s}
+  .view-btn:hover{color:var(--ink-800);background:var(--surface)}
+  .view-btn.active{background:var(--surface);color:var(--ink-900);box-shadow:var(--shadow-sm)}
+  .view-btn.active small{color:var(--ink-400)}
+  .view-btn small{display:block;font-size:10px;color:var(--ink-300);margin-top:1px;font-weight:400}
 
-  main { max-width:1280px; margin:0 auto; padding:22px clamp(18px,4vw,52px) 64px; }
-  .view { display:none; }
-  .view.active { display:block; }
-  .view-intro { color:var(--muted); font-size:13px; margin:0 0 18px; }
-  .view-intro b { color:var(--ink); }
+  /* ===== Layout ===== */
+  main{max-width:1280px;margin:0 auto;padding:22px clamp(18px,4vw,52px) 64px}
+  .view{display:none}
+  .view.active{display:block}
+  .view-intro{color:var(--ink-400);font-size:13px;margin:0 0 18px}
+  .view-intro b{color:var(--ink-800)}
 
   /* ===== 通用小件 ===== */
-  .chip { display:inline-flex; align-items:center; gap:6px; padding:4px 10px; border-radius:999px; font-size:12px; border:1px solid var(--line); background:var(--paper); }
-  .dot { width:7px; height:7px; border-radius:50%; flex:none; }
-  .badge { display:inline-block; padding:2px 8px; border-radius:6px; font-size:11px; font-weight:600; letter-spacing:.3px; }
-  .badge.fact { background:var(--accent-soft); color:var(--accent); }
-  .badge.inf  { background:var(--purple-soft); color:var(--purple); }
-  .badge.unk  { background:var(--warn-soft); color:var(--warn); }
+  .badge{display:inline-block;padding:2px 8px;border-radius:6px;font-size:11px;font-weight:600;letter-spacing:.3px}
+  .badge.fact{background:var(--fact-bg);color:var(--fact)}
+  .badge.inf{background:var(--inference-bg);color:var(--inference)}
+  .badge.unk{background:var(--unknown-bg);color:var(--unknown)}
 
-  /* ===== 视图一 · 旅程地图（里程碑路径 · 无表格） ===== */
-  .jm-wrap { background:var(--paper); border:1px solid var(--line); border-radius:var(--radius); box-shadow:var(--shadow); padding:32px 24px 28px; }
-  .jm-stations { display:grid; grid-template-columns:repeat(var(--n,6),1fr); position:relative; }
-  .jm-stations::before { content:""; position:absolute; top:21px; left:calc(100%/(var(--n,6)*2)); right:calc(100%/(var(--n,6)*2)); height:3px; border-radius:2px; background:linear-gradient(90deg,#dfe5ee,#c8d4e8); }
-  .jm-station { text-align:center; position:relative; z-index:1; padding:0 6px 16px; }
-  .st-dot { width:44px; height:44px; margin:0 auto; border-radius:50%; background:var(--paper); border:3px solid var(--c,#175cd3); display:flex; align-items:center; justify-content:center; font-weight:800; font-size:15px; color:var(--c,#175cd3); box-shadow:0 0 0 5px #fff, var(--shadow); }
-  .st-name { margin-top:10px; font-size:15px; font-weight:800; }
-  .st-trig { font-size:11.5px; color:var(--muted); margin-top:2px; line-height:1.45; }
-  .jm-emo { display:block; width:100%; height:165px; }
-  .jm-emo-row { display:grid; grid-template-columns:repeat(var(--n,6),1fr); margin:0 0 12px; }
-  .emo-lab { text-align:center; display:flex; flex-direction:column; gap:1px; padding:0 6px; }
-  .emo-lab b { font-size:16px; line-height:1.2; }
-  .emo-lab span { font-size:11px; color:var(--muted); line-height:1.4; }
-  .jm-cols { display:grid; grid-template-columns:repeat(var(--n,6),minmax(150px,1fr)); gap:0 14px; align-items:start; min-width:960px; }
-  .jm-scroll { overflow-x:auto; padding-bottom:6px; }
-  .jm-col { display:flex; flex-direction:column; gap:8px; padding-top:12px; position:relative; }
-  .jm-col::before { content:""; position:absolute; top:0; left:50%; transform:translateX(-50%); width:46px; height:3px; border-radius:2px; background:var(--c,#175cd3); opacity:.35; }
-  .jm-card { border:1px solid var(--line); border-left:3px solid var(--k,#98a4b8); border-radius:8px; padding:8px 10px; font-size:12.5px; line-height:1.5; background:#fff; box-shadow:0 1px 2px rgba(16,24,40,.04); overflow-wrap:anywhere; }
-  .jm-card .k { font-size:10px; font-weight:800; letter-spacing:1.5px; color:var(--muted); margin-bottom:3px; }
-  .jm-card.c-touch { --k:var(--accent); }
-  .jm-card.c-pain  { --k:var(--bad); background:var(--bad-soft); border-color:#f0cdc9; }
-  .jm-card.c-opp   { --k:var(--good); background:var(--good-soft); border-color:#cde6d8; }
-  .jm-narr { background:var(--paper); border:1px solid var(--line); border-radius:var(--radius); box-shadow:var(--shadow); padding:16px 20px; margin-top:16px; font-size:13px; color:var(--muted); }
-  .jm-narr b { color:var(--ink); }
-  .legendbar { display:flex; gap:16px; align-items:center; margin:0 0 12px; font-size:12px; color:var(--muted); flex-wrap:wrap; }
-  .rolebar { display:flex; flex-wrap:wrap; gap:8px; margin:0 0 14px; }
-  .rolechip { padding:7px 14px; border:1.5px solid var(--line); border-radius:9px; background:var(--paper); cursor:pointer; font:600 13px/1.3 var(--font); color:var(--ink); text-align:left; transition:.15s; }
-  .rolechip small { display:block; font-weight:400; font-size:10.5px; color:var(--muted); margin-top:2px; }
-  .rolechip:hover { border-color:var(--rc,var(--accent)); }
-  .rolechip.active { border-color:var(--rc,var(--ink)); box-shadow:inset 0 0 0 1px var(--rc,var(--ink)), var(--shadow); }
-  .rolechip.active small { color:var(--rc,var(--accent)); }
-  .role-goal { margin:0 0 16px; padding:10px 14px; border-radius:8px; background:var(--paper); border:1px solid var(--line); font-size:13px; }
-  .role-goal b { color:var(--rc,var(--accent)); }
-  .path-tag { display:inline-block; font-size:10px; font-weight:800; letter-spacing:.5px; padding:2px 7px; border-radius:5px; }
-  .path-tag.normal { background:var(--accent-soft); color:var(--accent); }
-  .path-tag.exception, .path-tag.failure { background:var(--bad-soft); color:var(--bad); }
-  .path-tag.recovery { background:#f0f1f4; color:var(--muted); }
-  .path-tag.alternative { background:var(--purple-soft); color:var(--purple); }
-  .path-tag.handoff { background:var(--warn-soft); color:var(--warn); }
-  .jm-card .n-title { font-weight:700; margin-bottom:3px; }
-  .legendbar .chip { cursor:default; }
+  /* ===== Legend 分组 ===== */
+  .legend-bar{display:flex;flex-wrap:wrap;gap:8px 24px;align-items:flex-start;margin:0 0 14px;padding:12px 0;border-bottom:1px solid var(--line-soft)}
+  .legend-group{display:inline-flex;flex-wrap:wrap;gap:6px 12px;align-items:center}
+  .legend-group-label{font-size:11px;font-weight:600;color:var(--ink-400);letter-spacing:.04em;text-transform:uppercase;margin-right:2px}
+  .legend-item{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;color:var(--ink-500)}
+  .l-dot{width:8px;height:8px;border-radius:50%;flex:none}
+  .l-dot.fact{background:var(--fact)}
+  .l-dot.inf{background:var(--inference)}
+  .l-dot.unk{background:var(--unknown)}
+  .l-line{display:block;width:18px;height:2px;flex:none;border-radius:1px}
+  .l-line.normal{background:var(--path-normal)}
+  .l-line.alternative{background:var(--path-alternative);border-top:1px dashed var(--path-alternative);height:0;background:0 0}
+  .l-line.exception{background:var(--path-exception)}
+  .l-line.failure{background:var(--path-failure)}
+  .l-line.handoff{background:var(--path-handoff)}
+  .l-line.recovery{background:var(--path-recovery);border-top:2px dotted var(--path-recovery);height:0;background:0 0}
 
-  /* ===== 视图二 · 泳道流程图 ===== */
-  .sw-wrap { position:relative; background:var(--paper); border:1px solid var(--line); border-radius:var(--radius); box-shadow:var(--shadow); overflow:auto; }
-  .sw { position:relative; min-width:1080px; }
-  .sw-grid { display:grid; grid-template-columns:150px repeat(6, minmax(140px,1fr)); }
-  .sw-hd { padding:11px 12px; text-align:center; font-size:12.5px; font-weight:700; border-bottom:1px solid var(--line); border-left:1px solid var(--line); background:linear-gradient(180deg,#fbfcfe,#f4f7fb); position:sticky; top:0; z-index:2; }
-  .sw-hd.blank { border-left:0; position:sticky; left:0; z-index:3; background:var(--paper); }
-  .sw-lane-label { border-top:1px solid var(--line); border-right:1px solid var(--line); padding:14px 12px; position:sticky; left:0; background:var(--paper); z-index:2; display:flex; flex-direction:column; gap:3px; }
-  .sw-lane-label .who { font-size:13.5px; font-weight:700; }
-  .sw-lane-label .goal { font-size:11px; color:var(--muted); line-height:1.45; }
-  .sw-lane-label .lbar { width:34px; height:4px; border-radius:2px; margin-bottom:2px; }
-  .sw-cell { border-top:1px solid var(--line); border-left:1px solid var(--line); min-height:120px; padding:10px; position:relative; }
-  .sw-node { position:relative; z-index:1; background:var(--paper); border:1.5px solid var(--accent); border-radius:9px; padding:9px 11px; box-shadow:var(--shadow); font-size:12.5px; }
-  .sw-node .n-title { font-weight:700; }
-  .sw-node .n-meta { color:var(--muted); font-size:11.5px; margin-top:3px; line-height:1.45; }
-  .sw-node.start { border-radius:999px; text-align:center; background:var(--accent-soft); }
-  .sw-node.end   { border-radius:999px; text-align:center; background:var(--good-soft); border-color:var(--good); }
-  .sw-node.decision { border-color:var(--purple); background:var(--purple-soft); }
-  .sw-node.exc { border-color:var(--warn); border-style:dashed; background:var(--warn-soft); }
-  .sw-node.fail { border-color:var(--bad); border-style:dashed; background:var(--bad-soft); }
-  .sw-node .n-path { display:inline-block; margin-top:6px; font-size:10px; font-weight:700; letter-spacing:.5px; padding:1px 7px; border-radius:5px; background:rgba(0,0,0,.05); }
-  .sw-edges { position:absolute; inset:0; z-index:0; pointer-events:none; }
-  .sw-edges path { fill:none; stroke-width:1.8; }
-  .sw-edges .e-normal { stroke:#98a4b8; }
-  .sw-edges .e-exc { stroke:var(--warn); stroke-dasharray:6 4; }
-  .sw-edges .e-fail { stroke:var(--bad); stroke-dasharray:6 4; }
-  .sw-edges .e-back { stroke:#98a4b8; stroke-dasharray:2 4; }
-  .sw-edges text { font:600 10.5px var(--font); fill:#667085; }
-  .sw-edges .lbl-exc { fill:var(--warn); } .sw-edges .lbl-fail { fill:var(--bad); }
+  /* ===== 旅程地图（里程碑路径） ===== */
+  .jm-wrap{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-xl);box-shadow:var(--shadow-md);padding:32px 24px 28px}
+  .jm-stations{display:grid;grid-template-columns:repeat(var(--n,6),1fr);position:relative}
+  .jm-stations::before{content:"";position:absolute;top:21px;left:calc(100%/(var(--n,6)*2));right:calc(100%/(var(--n,6)*2));height:3px;border-radius:2px;background:linear-gradient(90deg,var(--line),var(--line-strong))}
+  .jm-station{text-align:center;position:relative;z-index:1;padding:0 6px 16px}
+  .st-dot{width:44px;height:44px;margin:0 auto;border-radius:50%;background:var(--surface);border:3px solid var(--c,var(--accent));display:flex;align-items:center;justify-content:center;font-weight:800;font-size:15px;color:var(--c,var(--accent));box-shadow:0 0 0 5px var(--surface),var(--shadow-md)}
+  .st-name{margin-top:10px;font-size:15px;font-weight:800}
+  .st-trig{font-size:11.5px;color:var(--ink-400);margin-top:2px;line-height:1.45}
+  .jm-emo{display:block;width:100%;height:165px}
+  .jm-emo-row{display:grid;grid-template-columns:repeat(var(--n,6),1fr);margin:0 0 12px}
+  .emo-lab{text-align:center;display:flex;flex-direction:column;gap:1px;padding:0 6px}
+  .emo-lab b{font-size:16px;line-height:1.2}
+  .emo-lab span{font-size:11px;color:var(--ink-400);line-height:1.4}
+  .jm-cols{display:grid;grid-template-columns:repeat(var(--n,6),minmax(150px,1fr));gap:0 14px;align-items:start;min-width:960px}
+  .jm-scroll{overflow-x:auto;padding-bottom:6px}
+  .jm-col{display:flex;flex-direction:column;gap:8px;padding-top:12px;position:relative}
+  .jm-col::before{content:"";position:absolute;top:0;left:50%;transform:translateX(-50%);width:46px;height:3px;border-radius:2px;background:var(--c,var(--accent));opacity:.35}
+  .rolebar{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 14px}
+  .rolechip{padding:7px 14px;border:1.5px solid var(--line);border-radius:9px;background:var(--surface);cursor:pointer;font:600 13px/1.3 var(--font-sans);color:var(--ink-800);text-align:left;transition:.15s}
+  .rolechip small{display:block;font-weight:400;font-size:10.5px;color:var(--ink-400);margin-top:2px}
+  .rolechip:hover{border-color:var(--rc,var(--accent))}
+  .rolechip.active{border-color:var(--rc,var(--ink-900));box-shadow:inset 0 0 0 1px var(--rc,var(--ink-900)),var(--shadow-sm)}
+  .rolechip.active small{color:var(--rc,var(--accent))}
+  .role-goal{margin:0 0 16px;padding:10px 14px;border-radius:8px;background:var(--surface);border:1px solid var(--line);font-size:13px}
+  .role-goal b{color:var(--rc,var(--accent))}
 
-  /* ===== 视图三 · 状态流 ===== */
-  .st-wrap { background:var(--paper); border:1px solid var(--line); border-radius:var(--radius); box-shadow:var(--shadow); padding:34px 26px 26px; overflow:auto; }
-  .st-lane { display:flex; align-items:center; gap:0; min-width:980px; }
-  .st-node { flex:none; display:flex; flex-direction:column; align-items:center; gap:8px; }
-  .st-node .st-badges:first-child { min-height:24px; }
-  .st-capsule { padding:10px 20px; border-radius:999px; font-weight:700; font-size:14px; border:1.5px solid var(--accent); background:var(--paper); position:relative; }
-  .st-capsule .st-sub { display:block; font-size:11px; font-weight:400; color:var(--muted); margin-top:1px; }
-  .st-capsule.initial { background:var(--accent-soft); }
-  .st-capsule.warn { border-color:var(--warn); background:var(--warn-soft); }
-  .st-capsule.loopback { border-color:var(--purple); background:var(--purple-soft); }
-  .st-capsule.final { border-color:var(--good); background:var(--good-soft); }
-  .st-arrow { flex:none; width:64px; height:2px; background:#98a4b8; position:relative; }
-  .st-arrow::after { content:""; position:absolute; right:-1px; top:-4px; border-left:8px solid #98a4b8; border-top:5px solid transparent; border-bottom:5px solid transparent; }
-  .st-arrow .a-lbl { position:absolute; top:-20px; left:50%; transform:translateX(-50%); font-size:10.5px; white-space:nowrap; color:var(--muted); font-weight:600; }
-  .st-badges { display:flex; gap:5px; flex-wrap:wrap; justify-content:center; }
-  .st-loopnote { margin-top:30px; padding:12px 16px; border:1px dashed var(--purple); border-radius:8px; background:var(--purple-soft); color:var(--purple); font-size:12.5px; }
-  .st-loopnote b { color:#5b3bb0; }
-  .st-cards { display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:12px; margin-top:22px; }
-  .st-card { border:1px solid var(--line); border-radius:9px; padding:12px 14px; font-size:12.5px; }
-  .st-card h4 { margin:0 0 4px; font-size:13px; }
-  .st-card p { margin:0; color:var(--muted); }
-  .st-card .trigger { color:var(--ink); }
+  /* ===== Filter Bar ===== */
+  .filter-bar{margin:0 0 14px}
+  .filter-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-lg);padding:14px 16px;box-shadow:var(--shadow-sm)}
+  .field{display:flex;flex-direction:column;gap:5px}
+  .field-label{font-size:10px;font-weight:700;color:var(--ink-400);letter-spacing:.06em;text-transform:uppercase}
+  .filter-bar select{appearance:none;-webkit-appearance:none;width:100%;padding:8px 32px 8px 10px;border:1px solid var(--line);border-radius:var(--radius-md);background:var(--surface) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23737373' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E") no-repeat right 10px center;color:var(--ink-800);font:500 12.5px var(--font-sans);cursor:pointer;transition:.15s}
+  .filter-bar select:hover{border-color:var(--line-strong)}
+  .filter-bar select:focus-visible{outline:none;border-color:var(--gold);box-shadow:0 0 0 3px rgba(184,134,11,.15)}
 
-  footer { max-width:1280px; margin:0 auto; padding:0 clamp(18px,4vw,52px) 40px; color:var(--muted); font-size:12px; }
+  /* ===== 旅程卡片（可折叠） ===== */
+  .jm-card{border:1px solid var(--line);border-left:3px solid var(--k,var(--ink-300));border-radius:var(--radius-md);padding:8px 10px;font-size:12.5px;line-height:1.5;background:var(--surface);box-shadow:var(--shadow-sm);overflow-wrap:anywhere;cursor:pointer;transition:all .2s cubic-bezier(.4,0,.2,1)}
+  .jm-card:hover{border-color:var(--ink-300);box-shadow:var(--shadow-md);transform:translateY(-1px)}
+  .jm-card .k{font-size:10px;font-weight:800;letter-spacing:1.5px;color:var(--ink-400);margin-bottom:3px}
+  .jm-card.c-touch{--k:var(--accent)}
+  .jm-card.c-pain{--k:var(--bad);background:var(--bad-soft);border-color:#f0cdc9}
+  .jm-card.c-opp{--k:var(--good);background:var(--good-soft);border-color:#cde6d8}
+  .jm-card .n-title{font-weight:700;margin-bottom:3px}
+  .jm-card .card-details{max-height:0;overflow:hidden;transition:max-height .3s cubic-bezier(.4,0,.2,1)}
+  .jm-card.expanded .card-details{max-height:400px;padding-top:8px;margin-top:8px;border-top:1px solid var(--line-soft)}
+  .jm-card .expand-icon{float:right;width:18px;height:18px;border-radius:50%;background:var(--ink-50);display:flex;align-items:center;justify-content:center;color:var(--ink-400);font-size:12px;transition:.2s;flex-shrink:0}
+  .jm-card.expanded .expand-icon{transform:rotate(180deg);background:var(--ink-100);color:var(--ink-600)}
+  .path-tag{display:inline-block;font-size:10px;font-weight:800;letter-spacing:.5px;padding:2px 7px;border-radius:5px}
+  .path-tag.normal{background:var(--fact-bg);color:var(--fact)}
+  .path-tag.exception,.path-tag.failure{background:var(--bad-soft);color:var(--bad)}
+  .path-tag.recovery{background:var(--ink-50);color:var(--ink-400)}
+  .path-tag.alternative{background:var(--inference-bg);color:var(--inference)}
+  .path-tag.handoff{background:var(--warn-soft);color:var(--warn)}
+  .ev-text{font-family:var(--font-mono);font-size:11px;color:var(--ink-500);background:var(--ink-50);padding:5px 9px;border-radius:var(--radius-sm);border-left:2px solid var(--gold);line-height:1.5;display:inline-block;margin-top:4px;word-break:break-all}
+
+  .jm-narr{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-xl);box-shadow:var(--shadow-md);padding:16px 20px;margin-top:16px;font-size:13px;color:var(--ink-400)}
+  .jm-narr b{color:var(--ink-800)}
+
+  /* ===== 泳道流程图 ===== */
+  .sw-wrap{position:relative;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-xl);box-shadow:var(--shadow-md);overflow:auto}
+  .sw{position:relative;min-width:1080px}
+  .sw-grid{display:grid;grid-template-columns:150px repeat(6,minmax(140px,1fr))}
+  .sw-hd{padding:11px 12px;text-align:center;font-size:12.5px;font-weight:700;border-bottom:1px solid var(--line);border-left:1px solid var(--line);background:linear-gradient(180deg,var(--surface-2),var(--bg));position:sticky;top:0;z-index:2}
+  .sw-hd.blank{border-left:0;position:sticky;left:0;z-index:3;background:var(--surface)}
+  .sw-lane-label{border-top:1px solid var(--line);border-right:1px solid var(--line);padding:14px 12px;position:sticky;left:0;background:var(--surface);z-index:2;display:flex;flex-direction:column;gap:3px}
+  .sw-lane-label .who{font-size:13.5px;font-weight:700}
+  .sw-lane-label .goal{font-size:11px;color:var(--ink-400);line-height:1.45}
+  .sw-lane-label .lbar{width:34px;height:4px;border-radius:2px;margin-bottom:2px}
+  .sw-cell{border-top:1px solid var(--line);border-left:1px solid var(--line);min-height:120px;padding:10px;position:relative}
+  .sw-node{position:relative;z-index:1;background:var(--surface);border:1.5px solid var(--accent);border-radius:9px;padding:9px 11px;box-shadow:var(--shadow-sm);font-size:12.5px;transition:all .2s cubic-bezier(.4,0,.2,1)}
+  .sw-node:hover{border-color:var(--ink-300);box-shadow:var(--shadow-md);transform:translateY(-1px)}
+  .sw-node .n-title{font-weight:700}
+  .sw-node .n-meta{color:var(--ink-400);font-size:11.5px;margin-top:3px;line-height:1.45}
+  .sw-node.start{border-radius:999px;text-align:center;background:var(--accent-soft)}
+  .sw-node.end{border-radius:999px;text-align:center;background:var(--good-soft);border-color:var(--good)}
+  .sw-node.decision{border-color:var(--purple);background:var(--purple-soft)}
+  .sw-node.exc{border-color:var(--warn);border-style:dashed;background:var(--warn-soft)}
+  .sw-node.fail{border-color:var(--bad);border-style:dashed;background:var(--bad-soft)}
+  .sw-node.path-alternative{border-style:dashed;opacity:.85}
+  .sw-node.path-recovery{border-style:dotted;opacity:.65}
+  .sw-node .n-path{display:inline-block;margin-top:6px;font-size:10px;font-weight:700;letter-spacing:.5px;padding:1px 7px;border-radius:5px;background:rgba(0,0,0,.05)}
+  .sw-edges{position:absolute;inset:0;z-index:0;pointer-events:none}
+  .sw-edges path{fill:none;stroke-width:1.8}
+  .sw-edges .e-normal{stroke:var(--ink-300)}
+  .sw-edges .e-exc{stroke:var(--warn);stroke-dasharray:6 4}
+  .sw-edges .e-fail{stroke:var(--bad);stroke-dasharray:6 4}
+  .sw-edges .e-back{stroke:var(--ink-300);stroke-dasharray:2 4}
+  .sw-edges text{font:600 10.5px var(--font-sans);fill:var(--ink-400)}
+  .sw-edges .lbl-exc{fill:var(--warn)}
+  .sw-edges .lbl-fail{fill:var(--bad)}
+
+  /* ===== 状态流 ===== */
+  .st-wrap{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-xl);box-shadow:var(--shadow-md);padding:34px 26px 26px;overflow:auto}
+  .st-lane{display:flex;align-items:center;gap:0;min-width:980px}
+  .st-node{flex:none;display:flex;flex-direction:column;align-items:center;gap:8px}
+  .st-node .st-badges:first-child{min-height:24px}
+  .st-capsule{padding:10px 20px;border-radius:999px;font-weight:700;font-size:14px;border:1.5px solid var(--accent);background:var(--surface);position:relative}
+  .st-capsule .st-sub{display:block;font-size:11px;font-weight:400;color:var(--ink-400);margin-top:1px}
+  .st-capsule.initial{background:var(--accent-soft)}
+  .st-capsule.warn{border-color:var(--warn);background:var(--warn-soft)}
+  .st-capsule.loopback{border-color:var(--purple);background:var(--purple-soft)}
+  .st-capsule.final{border-color:var(--good);background:var(--good-soft)}
+  .st-arrow{flex:none;width:64px;height:2px;background:var(--ink-300);position:relative}
+  .st-arrow::after{content:"";position:absolute;right:-1px;top:-4px;border-left:8px solid var(--ink-300);border-top:5px solid transparent;border-bottom:5px solid transparent}
+  .st-arrow .a-lbl{position:absolute;top:-20px;left:50%;transform:translateX(-50%);font-size:10.5px;white-space:nowrap;color:var(--ink-400);font-weight:600}
+  .st-badges{display:flex;gap:5px;flex-wrap:wrap;justify-content:center}
+  .st-loopnote{margin-top:30px;padding:12px 16px;border:1px dashed var(--purple);border-radius:8px;background:var(--purple-soft);color:var(--purple);font-size:12.5px}
+  .st-loopnote b{color:#5b3bb0}
+  .st-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px;margin-top:22px}
+  .st-card{border:1px solid var(--line);border-radius:9px;padding:12px 14px;font-size:12.5px}
+  .st-card h4{margin:0 0 4px;font-size:13px}
+  .st-card p{margin:0;color:var(--ink-400)}
+  .st-card .trigger{color:var(--ink-800)}
+
+  footer{max-width:1280px;margin:0 auto;padding:0 clamp(18px,4vw,52px) 40px;color:var(--ink-400);font-size:12px}
+
+@media(max-width:900px){.topbar-inner{padding:12px 16px}.filter-bar{padding:12px 16px 0}.filter-grid{grid-template-columns:1fr}.content{padding:16px}}
 </style>
 </head>
 <body>
 
-<header>
-  <h1>用户旅程 · 可视化画板</h1>
-  <p>HTML 原生绘制 · 单文件零依赖 · 数据来自 user-journey.md（UJ-DEMO-001 · 内部代码评审系统 · 业务层）</p>
-  <nav class="tabs" id="tabs">
-    <button class="tab active" data-view="map">旅程地图<small>阶段 × 维度 + 情绪曲线</small></button>
-    <button class="tab" data-view="swim">泳道流程图<small>角色泳道 + 正交连线</small></button>
-    <button class="tab" data-view="state">状态流<small>状态迁移 + 回路</small></button>
-  </nav>
-</header>
-
-<main>
-
-  <!-- ================= 视图一 · 旅程地图 ================= -->
-  <section class="view active" id="view-map">
-    <p class="view-intro"><b>旅程地图</b> — 点角色名切换到该角色的独立旅程；「综合视角」为全角色汇总。情绪分值与痛点均来自原材料可观察行为；角色视图顺畅度由路径类型推导（<span class="badge inf">AI_INFERENCE</span>），未使用无证据形容词。</p>
-
-    <div class="rolebar" id="rolebar">
-      <button class="rolechip active" data-role="-1">综合视角<small>7 角色 · 6 阶段</small></button>
+<div class="app">
+  <!-- ===== Top Bar ===== -->
+  <header class="topbar">
+    <div class="topbar-inner">
+      <div class="brand">
+        <div class="brand-mark">J</div>
+        <div class="brand-text">
+          <div class="brand-title">用户旅程 · 可视化画板</div>
+          <div class="brand-sub">HTML 原生 · 零依赖</div>
+        </div>
+      </div>
+      <div class="topbar-actions">
+        <div class="count-badge">
+          <span>节点</span>
+          <strong id="countText">—</strong>
+        </div>
+        <div class="view-switch" role="tablist" aria-label="视图切换">
+          <button class="view-btn active" data-view="map" role="tab" aria-selected="true">旅程地图<small>角色切换</small></button>
+          <button class="view-btn" data-view="swim" role="tab" aria-selected="false">泳道<small>角色泳道</small></button>
+          <button class="view-btn" data-view="state" role="tab" aria-selected="false">状态流<small>迁移回路</small></button>
+        </div>
+      </div>
     </div>
-    <div class="role-goal" id="role-goal" style="display:none"></div>
+  </header>
 
-    <div class="legendbar">
-      <span class="chip"><i class="dot" style="background:var(--good)"></i>顺畅（4–5）</span>
-      <span class="chip"><i class="dot" style="background:#e3a008"></i>一般（3）</span>
-      <span class="chip"><i class="dot" style="background:var(--bad)"></i>受阻（1–2）</span>
-      <span class="chip"><span class="badge fact">FACT</span>有来源</span>
-      <span class="chip"><span class="badge inf">AI_INFERENCE</span>推断</span>
-      <span class="chip"><span class="badge unk">UNKNOWN</span>待确认</span>
-    </div>
+  <main>
+    <!-- ================= 视图一 · 旅程地图 ================= -->
+    <section class="view active" id="view-map">
+      <p class="view-intro"><b>旅程地图</b> — 点角色名切换独立旅程；「综合视角」为全角色汇总。情绪分值来自可观察行为；角色视图顺畅度由路径类型推导（<span class="badge inf">AI_INFERENCE</span>）。</p>
 
-    <div class="jm-wrap"><div class="jm" id="jm"></div></div>
+      <div class="rolebar" id="rolebar">
+        <button class="rolechip active" data-role="-1">综合视角<small>7 角色 · 6 阶段</small></button>
+      </div>
+      <div class="role-goal" id="role-goal" style="display:none"></div>
 
-    <div class="jm-narr">
-      <b>一句话旅程叙事</b> — 开发者推送 MR，评审人在 SLA 内做出 approve / reject 决定，QA 与安全工程师同步跟踪，PM 拿到统计与项目进度，数据工程师把过程数据入仓供月度复盘；reject 时回到修改循环。<span class="badge inf" style="margin-left:4px">AI_INFERENCE</span>
-    </div>
-  </section>
+      <div class="filter-bar">
+        <div class="filter-grid">
+          <div class="field">
+            <span class="field-label">阶段</span>
+            <select id="stageFilter"><option value="">全部阶段</option></select>
+          </div>
+          <div class="field">
+            <span class="field-label">路径类型</span>
+            <select id="pathFilter"><option value="">全部路径</option></select>
+          </div>
+          <div class="field">
+            <span class="field-label">知识状态</span>
+            <select id="statusFilter"><option value="">全部状态</option></select>
+          </div>
+        </div>
+      </div>
 
-  <!-- ================= 视图二 · 泳道流程图 ================= -->
-  <section class="view" id="view-swim">
-    <p class="view-intro"><b>泳道流程图</b> — 每条泳道一个角色，横向为阶段推进；菱形为决策点，橙色虚线为异常路径，红色虚线为失败路径，灰色虚线为返工回路。</p>
+      <div class="legend-bar">
+        <div class="legend-group">
+          <span class="legend-group-label">知识状态</span>
+          <span class="legend-item"><i class="l-dot fact"></i>FACT · 材料明确</span>
+          <span class="legend-item"><i class="l-dot inf"></i>AI_INFERENCE · 推断</span>
+          <span class="legend-item"><i class="l-dot unk"></i>UNKNOWN · 未知</span>
+        </div>
+        <div class="legend-group">
+          <span class="legend-group-label">路径类型</span>
+          <span class="legend-item"><i class="l-line normal"></i>主路径</span>
+          <span class="legend-item"><i class="l-line alternative"></i>备选</span>
+          <span class="legend-item"><i class="l-line exception"></i>异常</span>
+          <span class="legend-item"><i class="l-line failure"></i>失败</span>
+          <span class="legend-item"><i class="l-line handoff"></i>交接</span>
+          <span class="legend-item"><i class="l-line recovery"></i>恢复</span>
+        </div>
+      </div>
 
-    <div class="legendbar">
-      <span class="chip"><i class="dot" style="background:var(--accent)"></i>正常节点</span>
-      <span class="chip"><i class="dot" style="background:var(--purple)"></i>决策</span>
-      <span class="chip"><i class="dot" style="background:var(--warn)"></i>异常 exception</span>
-      <span class="chip"><i class="dot" style="background:var(--bad)"></i>失败 failure</span>
-      <span class="chip"><i class="dot" style="background:#98a4b8"></i>返工 recovery</span>
-    </div>
+      <div class="jm-wrap"><div class="jm" id="jm"></div></div>
 
-    <div class="sw-wrap"><div class="sw" id="sw">
-      <svg class="sw-edges" id="sw-edges"></svg>
-      <div class="sw-grid" id="sw-grid"></div>
-    </div></div>
-  </section>
+      <div class="jm-narr">
+        <b>一句话旅程叙事</b> — 开发者推送 MR，评审人在 SLA 内做出 approve / reject 决定，QA 与安全工程师同步跟踪，PM 拿到统计与项目进度，数据工程师把过程数据入仓供月度复盘；reject 时回到修改循环。<span class="badge inf" style="margin-left:4px">AI_INFERENCE</span>
+      </div>
+    </section>
 
-  <!-- ================= 视图三 · 状态流 ================= -->
-  <section class="view" id="view-state">
-    <p class="view-intro"><b>状态流</b> — 一次 MR 在旅程中的状态迁移，含拖期分支与修改回路。状态命名与 user-journey.md 路径覆盖表一致。</p>
+    <!-- ================= 视图二 · 泳道流程图 ================= -->
+    <section class="view" id="view-swim">
+      <p class="view-intro"><b>泳道流程图</b> — 每条泳道一个角色，横向为阶段推进；菱形为决策点，橙色虚线为异常路径，红色虚线为失败路径，灰色虚线为返工回路。</p>
 
-    <div class="st-wrap">
-      <div class="st-lane" id="st-lane"></div>
-      <div class="st-loopnote">↩ <b>修改回路</b>：开发者改完 push → 回到「评审中」；「拖期」经逾期升级后同样回到「评审中」。回路对应路径类型 recovery。</div>
-      <div class="st-cards" id="st-cards"></div>
-    </div>
-  </section>
+      <div class="legend-bar">
+        <div class="legend-group">
+          <span class="legend-group-label">节点类型</span>
+          <span class="legend-item"><i class="l-dot" style="background:var(--accent)"></i>正常</span>
+          <span class="legend-item"><i class="l-dot" style="background:var(--purple)"></i>决策</span>
+          <span class="legend-item"><i class="l-dot" style="background:var(--warn)"></i>异常</span>
+          <span class="legend-item"><i class="l-dot" style="background:var(--bad)"></i>失败</span>
+        </div>
+        <div class="legend-group">
+          <span class="legend-group-label">路径类型</span>
+          <span class="legend-item"><i class="l-line normal"></i>主路径</span>
+          <span class="legend-item"><i class="l-line alternative"></i>备选</span>
+          <span class="legend-item"><i class="l-line exception"></i>异常</span>
+          <span class="legend-item"><i class="l-line failure"></i>失败</span>
+          <span class="legend-item"><i class="l-line recovery"></i>返工</span>
+        </div>
+      </div>
 
-</main>
+      <div class="sw-wrap"><div class="sw" id="sw">
+        <svg class="sw-edges" id="sw-edges"></svg>
+        <div class="sw-grid" id="sw-grid"></div>
+      </div></div>
+    </section>
 
-<footer>只读画板：仅呈现旅程材料，不新增页面、功能或状态 · 证据与未知项可追至治理伴随文件</footer>
+    <!-- ================= 视图三 · 状态流 ================= -->
+    <section class="view" id="view-state">
+      <p class="view-intro"><b>状态流</b> — 一次 MR 在旅程中的状态迁移，含拖期分支与修改回路。状态命名与 user-journey.md 路径覆盖表一致。</p>
+
+      <div class="st-wrap">
+        <div class="st-lane" id="st-lane"></div>
+        <div class="st-loopnote">↩ <b>修改回路</b>：开发者改完 push → 回到「评审中」；「拖期」经逾期升级后同样回到「评审中」。回路对应路径类型 recovery。</div>
+        <div class="st-cards" id="st-cards"></div>
+      </div>
+    </section>
+  </main>
+
+  <footer>只读画板：仅呈现旅程材料，不新增页面、功能或状态 · 证据与未知项可追溯至治理伴随文件 · 支持 URL 参数 ?role=&amp;stage=&amp;path=&amp;view= 直达</footer>
+</div>
 
 <script>
 /* =====================================================================
@@ -522,11 +637,67 @@ function renderMap(roleIdx){
     const chip = e.target.closest(".rolechip");
     if (!chip) return;
     bar.querySelectorAll(".rolechip").forEach(x=>x.classList.toggle("active", x===chip));
+    URL_STATE.role = chip.dataset.role >= 0 ? DATA.roles[+chip.dataset.role].who : "";
+    syncURL();
     renderMap(+chip.dataset.role);
   });
+  // 恢复 URL 角色
+  if (URL_STATE.role){
+    const idx = DATA.roles.findIndex(r=>r.who===URL_STATE.role);
+    if (idx >= 0){
+      const chip = bar.querySelector(`.rolechip[data-role="${idx}"]`);
+      if (chip) { chip.click(); }
+    }
+  }
   window.addEventListener("resize", ()=>{
     const chip = document.querySelector(".rolechip.active");
     renderMap(chip ? +chip.dataset.role : -1);
+  });
+})();
+
+/* 筛选栏初始化 */
+(function initFilters(){
+  const stageSel = document.getElementById("stageFilter");
+  DATA.stages.forEach((s,i)=>{
+    stageSel.insertAdjacentHTML("beforeend", `<option value="${i}">${i+1}. ${s.name}</option>`);
+  });
+  const pathSel = document.getElementById("pathFilter");
+  ["normal","alternative","exception","failure","handoff","recovery"].forEach(p=>{
+    pathSel.insertAdjacentHTML("beforeend", `<option value="${p}">${p}</option>`);
+  });
+  const statusSel = document.getElementById("statusFilter");
+  ["FACT","AI_INFERENCE","UNKNOWN","CONFLICT"].forEach(s=>{
+    statusSel.insertAdjacentHTML("beforeend", `<option value="${s}">${s}</option>`);
+  });
+  // 恢复 URL 状态
+  if (URL_STATE.stage) stageSel.value = URL_STATE.stage;
+  if (URL_STATE.path) pathSel.value = URL_STATE.path;
+  [stageSel, pathSel, statusSel].forEach(sel=>{
+    sel.addEventListener("change", ()=>{
+      const key = sel.id.replace("Filter","").toLowerCase();
+      URL_STATE[key] = sel.value;
+      syncURL();
+      // 重新渲染 - 高亮匹配节点
+      document.querySelectorAll(".jm-card, .sw-node").forEach(el=>{
+        el.style.opacity = "1";
+        el.style.filter = "none";
+      });
+      if (URL_STATE.stage || URL_STATE.path || URL_STATE.status){
+        // 简化的筛选指示：高亮匹配
+        const filterStage = +URL_STATE.stage;
+        const filterPath = URL_STATE.path;
+        const filterStatus = URL_STATE.status;
+        document.querySelectorAll(".jm-card, .sw-node").forEach(el=>{
+          let match = true;
+          if (filterStage && el.closest(".jm-col")){
+            const colIdx = [...el.closest(".jm-col").parentElement.children].indexOf(el.closest(".jm-col"));
+            if (colIdx !== filterStage) match = false;
+          }
+          el.style.opacity = match ? "1" : "0.25";
+          el.style.filter = match ? "none" : "grayscale(0.8)";
+        });
+      }
+    });
   });
 })();
 renderMap(-1);
@@ -549,7 +720,7 @@ renderMap(-1);
     S.forEach((s,si)=>{
       const list = byCell[li+"-"+si] || [];
       html += `<div class="sw-cell">${list.map(o=>`
-        <div class="sw-node ${o.type}" id="n${o.i}">
+        <div class="sw-node ${o.type} ${o.path==="alternative"?"path-alternative":o.path==="recovery"?"path-recovery":""}" id="n${o.i}">
           <div class="n-title">${o.title}</div>
           <div class="n-meta">${o.meta}</div>
           <span class="n-path">${o.path}</span>
@@ -628,14 +799,54 @@ renderMap(-1);
     </div>`).join("");
 })();
 
+/* ===================== URL 参数同步 ===================== */
+const URL_STATE = (()=>{
+  const p = new URLSearchParams(location.search);
+  return { role: p.get("role")||"", stage: p.get("stage")||"", path: p.get("path")||"", view: p.get("view")||"" };
+})();
+function syncURL(){
+  const q = new URLSearchParams();
+  if (URL_STATE.role) q.set("role", URL_STATE.role);
+  if (URL_STATE.stage) q.set("stage", URL_STATE.stage);
+  if (URL_STATE.path) q.set("path", URL_STATE.path);
+  if (URL_STATE.view) q.set("view", URL_STATE.view);
+  history.replaceState(null, "", `${location.pathname}${q.toString()?"?"+q:""}${location.hash}`);
+}
+
 /* ===================== 视图切换 ===================== */
-document.querySelectorAll(".tab").forEach(t=>{
-  t.addEventListener("click", ()=>{
-    document.querySelectorAll(".tab").forEach(x=>x.classList.toggle("active", x===t));
-    document.querySelectorAll(".view").forEach(v=>v.classList.toggle("active", v.id==="view-"+t.dataset.view));
-    if (t.dataset.view==="swim" && window.__swDraw) requestAnimationFrame(window.__swDraw);
+document.querySelectorAll(".view-btn").forEach(btn=>{
+  btn.addEventListener("click", ()=>{
+    const v = btn.dataset.view;
+    URL_STATE.view = v;
+    document.querySelectorAll(".view-btn").forEach(b=>{
+      const active = b.dataset.view === v;
+      b.classList.toggle("active", active);
+      b.setAttribute("aria-selected", active?"true":"false");
+    });
+    document.querySelectorAll(".view").forEach(vw=>vw.classList.toggle("active", vw.id==="view-"+v));
+    syncURL();
+    if (v==="swim" && window.__swDraw) requestAnimationFrame(window.__swDraw);
   });
 });
+// 恢复 URL 视图
+if (URL_STATE.view){
+  const btn = document.querySelector(`.view-btn[data-view="${URL_STATE.view}"]`);
+  if (btn) btn.click();
+}
+
+/* ===================== 卡片点击展开/折叠 ===================== */
+document.addEventListener("click", e=>{
+  const card = e.target.closest(".jm-card");
+  if (!card || card.closest(".jm-col")) return; // 只在旅程地图中生效
+  card.classList.toggle("expanded");
+});
+
+/* ===================== 节点计数更新钩子 ===================== */
+function updateCount(){
+  const total = DATA.roles.reduce((s,r)=>s+r.nodes.length, 0);
+  document.getElementById("countText").textContent = total;
+}
+updateCount();
 </script>
 </body>
 </html>
