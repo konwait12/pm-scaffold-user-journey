@@ -219,7 +219,9 @@ lark-cli docs +fetch \
 
 **第二层（PM 汇报 · HTML 原生）**：当用户或 PM 要求"好看的图 / 汇报版 / 专门 HTML 版"时，生成 `assets/journey-map-studio.html`：纯 HTML/SVG 手绘（不依赖 Mermaid），三个视图 —— 旅程地图（角色切换：综合视角 + 每个角色一条独立旅程，含角色目标、路径类型推导的顺畅度曲线并标注 AI_INFERENCE）、泳道流程图（角色泳道 + 正交连线，异常/失败/返工路径分色）、状态流（状态迁移 + 回路）。数据块与主文档角色旅程矩阵同源，替换 `DATA` 即可复用。
 
-**节点覆盖率硬约束（两层可视化均适用）**：任何可视化产物必须覆盖主文档角色旅程矩阵中的**全部角色 × 全部节点，一个不缺**。`assets/journey-map-studio.html` 模板的 `DATA` 有三处节点载体（`roles[].nodes`、`swim.nodes`、`states`），最低覆盖标准：`roles[].nodes` 与 `swim.nodes` 两处都必须与主文档矩阵逐节点相等，`states` 仅在有状态迁移材料时填充。生成前先数主文档节点总数，再数可视化数据块节点总数，两者相等才允许交付；缺节点 = 交付失败。角色视图不得把多角色旅程压缩成一条混合旅程——每个角色必须能独立查看，角色没有节点的阶段如实留空，不得虚构行为填充。主文档没有的信息（如逐角色情绪分值）用可解释的推导（如按路径类型推导顺畅度：normal/alternative=3、handoff/exception/recovery=2、failure=1）并显式标注 AI_INFERENCE，禁止无证据编造。
+**第三层（PM 汇报 · 流程图原生 v1.5）**：当 PM 想要"像 PRD 流程图那样、每个节点像截图一样"的旅程图时，生成 `assets/user-journey-flow.html`：节点卡片式流程图（起点胶囊 / 终点胶囊 / 菱形决策节点 / 异常失败交接恢复分色边框），每个节点卡片带标题 + 描述 + 路径类型角标 + 知识状态徽章，点击节点弹出详情（行为/触点/结果/证据），支持角色 Tab 切换、阶段/路径/状态筛选、搜索、URL 参数直达。数据块在 `JOURNEY`（meta/stages/roles/nodes），替换即可复用；nodes 字段：id/role/stage/path/status/type/title/desc/behavior/touchpoint/result/evidence。type 可选 start/end/decision/exception/failure/handoff/recovery/alternative。
+
+**节点覆盖率硬约束（三层可视化均适用）**：任何可视化产物必须覆盖主文档角色旅程矩阵中的**全部角色 × 全部节点，一个不缺**。`assets/journey-map-studio.html` 模板的 `DATA` 有三处节点载体（`roles[].nodes`、`swim.nodes`、`states`），最低覆盖标准：`roles[].nodes` 与 `swim.nodes` 两处都必须与主文档矩阵逐节点相等，`states` 仅在有状态迁移材料时填充。`assets/user-journey-flow.html` 模板的 `JOURNEY.nodes` 必须与主文档矩阵逐节点相等。生成前先数主文档节点总数，再数可视化数据块节点总数，两者相等才允许交付；缺节点 = 交付失败。角色视图不得把多角色旅程压缩成一条混合旅程——每个角色必须能独立查看，角色没有节点的阶段如实留空，不得虚构行为填充。主文档没有的信息（如逐角色情绪分值）用可解释的推导（如按路径类型推导顺畅度：normal/alternative=3、handoff/exception/recovery=2、failure=1）并显式标注 AI_INFERENCE，禁止无证据编造。
 
 **品类 / 变体分列规则（v1.2 · 源自盲测 A 类盲区）**：当材料对同一旅程按品类、用户类型、渠道或设备分列描述（如手袋 HBG 与成衣 RTW 的字段/入口/通知差异、All users 与 InCHANEL client 的页面差异），旅程矩阵必须分列节点或在节点内显式标注差异，禁止合并成笼统表述。材料分栏存在即视为差异线索；差异内容材料未给时标 UNKNOWN，不得默认两品类行为一致。
 
