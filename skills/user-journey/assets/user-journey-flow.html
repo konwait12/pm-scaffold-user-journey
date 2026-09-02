@@ -1,0 +1,616 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>用户旅程 · 流程图画板（v1.5 · 模板）</title>
+<style>
+  /* ============ Design Tokens (warm black + gold · luxury) ============ */
+  :root {
+    color-scheme: light;
+    --ink-900:#0a0a0a; --ink-800:#171717; --ink-700:#262626; --ink-600:#404040;
+    --ink-500:#525252; --ink-400:#737373; --ink-300:#a3a3a3; --ink-200:#d4d4d4;
+    --ink-100:#e5e5e5; --ink-50:#fafafa;
+    --bg:#f7f7f5; --surface:#ffffff; --surface-2:#fcfcfb; --surface-hover:#fafaf9;
+    --line:#e7e5e4; --line-soft:#f0eeed; --line-strong:#d6d3d1;
+    --accent:#1c1917; --accent-soft:#f5f5f4;
+    --gold:#b8860b; --gold-soft:#fef9e7; --gold-line:#e9d8a6;
+    --fact:#1c1917; --fact-bg:#f5f5f4;
+    --inference:#7c3aed; --inference-bg:#f5f3ff;
+    --unknown:#c2410c; --unknown-bg:#fff7ed;
+    --path-normal:#1c1917; --path-alternative:#a8a29e; --path-exception:#b8860b;
+    --path-failure:#c2410c; --path-handoff:#0d9488; --path-recovery:#d6d3d1;
+    --good:#0f8a4d; --good-soft:#e9f7ef;
+    --bad:#c0392b; --bad-soft:#fdecea;
+    --warn:#b54708; --warn-soft:#fdf3e7;
+    --font-sans:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+    --font-serif:"Playfair Display","Noto Serif SC",Georgia,serif;
+    --font-mono:"SF Mono","JetBrains Mono",Menlo,Consolas,monospace;
+    --shadow-sm:0 1px 2px rgba(0,0,0,0.04);
+    --shadow-md:0 2px 8px rgba(0,0,0,0.06),0 1px 2px rgba(0,0,0,0.04);
+    --shadow-lg:0 8px 24px rgba(0,0,0,0.08),0 2px 6px rgba(0,0,0,0.04);
+    --shadow-focus:0 0 0 3px rgba(184,134,11,0.15);
+    --radius-sm:4px; --radius-md:6px; --radius-lg:8px; --radius-xl:12px; --radius-full:999px;
+  }
+  *,*::before,*::after{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;font:14px/1.6 var(--font-sans);color:var(--ink-800);background:var(--bg);-webkit-font-smoothing:antialiased}
+  h1,h2,h3,h4{margin:0;font-weight:600;color:var(--ink-900)}
+  p{margin:0}
+
+  /* ============ App Shell ============ */
+  .app{min-height:100vh;display:flex;flex-direction:column}
+
+  /* ============ Top Bar ============ */
+  .topbar{position:sticky;top:0;z-index:100;background:rgba(255,255,255,0.85);backdrop-filter:saturate(180%) blur(12px);-webkit-backdrop-filter:saturate(180%) blur(12px);border-bottom:1px solid var(--line)}
+  .topbar-inner{max-width:1480px;margin:0 auto;padding:14px 28px;display:flex;align-items:center;justify-content:space-between;gap:24px}
+  .brand{display:flex;align-items:center;gap:12px;min-width:0}
+  .brand-mark{width:30px;height:30px;border-radius:50%;background:var(--ink-900);display:flex;align-items:center;justify-content:center;color:#fff;font-family:var(--font-serif);font-size:13px;font-weight:600;flex-shrink:0;box-shadow:var(--shadow-sm)}
+  .brand-text{min-width:0}
+  .brand-title{font-size:14px;font-weight:600;color:var(--ink-900);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .brand-sub{font-size:11px;color:var(--ink-400);letter-spacing:0.04em;text-transform:uppercase;margin-top:1px}
+  .topbar-actions{display:flex;align-items:center;gap:10px;flex-shrink:0;flex-wrap:wrap}
+  .count-badge{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;background:var(--ink-50);border:1px solid var(--line);border-radius:var(--radius-md);font-size:12px;color:var(--ink-500)}
+  .count-badge strong{color:var(--ink-900);font-weight:600;font-variant-numeric:tabular-nums}
+
+  /* ============ Role Tabs ============ */
+  .role-tabs{display:inline-flex;background:var(--ink-50);border:1px solid var(--line);border-radius:var(--radius-md);padding:3px;gap:2px;flex-wrap:wrap;max-width:60vw;overflow-x:auto}
+  .role-tab{padding:6px 12px;border:none;border-radius:var(--radius-sm);background:transparent;font:500:12px/1 var(--font-sans);color:var(--ink-500);cursor:pointer;transition:all 0.15s ease;white-space:nowrap}
+  .role-tab:hover{color:var(--ink-700);background:var(--surface)}
+  .role-tab.active{background:var(--surface);color:var(--ink-900);box-shadow:var(--shadow-sm)}
+
+  /* ============ Filter Bar ============ */
+  .filter-bar{max-width:1480px;margin:0 auto;padding:16px 28px 0}
+  .filter-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-lg);padding:14px 18px;box-shadow:var(--shadow-sm)}
+  .field{display:flex;flex-direction:column;gap:6px;min-width:0}
+  .field-label{font-size:10px;font-weight:600;color:var(--ink-400);text-transform:uppercase;letter-spacing:0.06em}
+  .field select,.field input{padding:8px 32px 8px 10px;border:1px solid var(--line);border-radius:var(--radius-md);background:var(--surface);color:var(--ink-800);font:500:12.5px/1.4 var(--font-sans);appearance:none;-webkit-appearance:none;cursor:pointer;width:100%;box-sizing:border-box}
+  .field select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23737373' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;padding-right:32px}
+  .field select:hover,.field input:hover{border-color-color:border-color:var(--line-strong)}
+  .field select:focus-visible,.field input:focus-visible{outline:none;border-color:var(--gold);box-shadow:var(--shadow-focus)}
+
+  /* ============ Legend ============ */
+  .legend-bar{max-width:1480px;margin:0 auto;padding:12px 28px 0}
+  .legend-inner{display:flex;flex-wrap:wrap;align-items:center;gap:12px 28px;padding:12px 16px;background:var(--surface-2);border:1px solid var(--line-soft);border-radius:var(--radius-md)}
+  .legend-group{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .legend-group-label{font-size:10px;font-weight:600;color:var(--ink-400);text-transform:uppercase;letter-spacing:0.08em;flex-shrink:0}
+  .legend-item{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--ink-600)}
+  .legend-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+  .legend-line{width:22px;height:0;border-top:2px solid;flex-shrink:0}
+  .legend-line.normal{border-color:var(--path-normal)}
+  .legend-line.alternative{border-top-style:dashed;border-color:var(--path-alternative)}
+  .legend-line.exception{border-color:var(--path-exception)}
+  .legend-line.failure{border-color:var(--path-failure)}
+  .legend-line.handoff{border-color:var(--path-handoff)}
+  .legend-line.recovery{border-top-style:dotted;border-color:var(--path-recovery)}
+
+  /* ============ Content ============ */
+  .content{max-width:1480px;margin:0 auto;padding:18px 28px 64px;flex:1;width:100%}
+
+  /* ============ Summary Bar ============ */
+  .summary-bar{background:var(--surface);border:1px solid var(--line);border-left:3px solid var(--gold);border-radius:var(--radius-lg);padding:14px 20px;margin-bottom:18px;font-size:13.5px;color:var(--ink-600);line-height:1.7}
+  .summary-bar b{color:var(--ink-900)}
+
+  /* ============ Goal Bar ============ */
+  .goal-bar{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-lg);padding:14px 20px;margin-bottom:18px;font-size:13px;color:var(--ink-600)}
+  .goal-bar b{color:var(--ink-900);font-weight:700}
+  .goal-bar .role-tag{display:inline-block;padding:2px 8px;border-radius:var(--radius-sm);background:var(--accent-soft);color:var(--accent);font-weight:600;font-size:11px;margin-right:6px}
+
+  /* ============ FLOW CANVAS (核心：节点 + 边) ============ */
+  .flow-section{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-xl);box-shadow:var(--shadow-md);padding:32px 28px 28px;margin-bottom:18px}
+  .flow-header{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:18px;padding-bottom:14px;border-bottom:2px solid var(--ink-900);flex-wrap:wrap}
+  .flow-title{display:flex;align-items:center;gap:14px;min-width:0;flex:1}
+  .flow-stage-num{width:32px;height:32px;border-radius:50%;background:var(--ink-900);color:#fff;display:flex;align-items:center;justify-content:center;font-family:var(--font-mono);font-size:12px;font-weight:700;flex-shrink:0}
+  .flow-stage-info h3{font-size:16px;font-weight:600;color:var(--ink-900);margin:0}
+  .flow-stage-info .stage-desc{font-size:12px;color:var(--ink-400);margin-top:2px}
+  .flow-actions{display:flex;gap:8px;align-items:center}
+  .flow-action{padding:6px 14px;border:1px solid var(--line);border-radius:var(--radius-md);background:var(--surface);font:500:11.5px var(--font-sans);color:var(--ink-600);cursor:pointer;transition:all 0.15s ease}
+  .flow-action:hover{color:var(--ink-900);border-color:var(--ink-300)}
+  .flow-action.active{background:var(--ink-900);color:#fff;border-color:var(--ink-900)}
+
+  .flow-canvas{position:relative;display:flex;flex-wrap:wrap;gap:14px;align-items:flex-start}
+  .flow-canvas::before{content:"";position:absolute;left:0;right:0;top:14px;height:2px;background:var(--line-soft);z-index:0}
+  .flow-node{position:relative;z-index:1;min-width:148px;max-width:200px;background:var(--surface);border:2px solid var(--ink-300);border-radius:var(--radius-lg);padding:10px 12px;cursor:pointer;transition:all 0.2s cubic-bezier(0.4,0,0.2,1);box-shadow:var(--shadow-sm)}
+  .flow-node:hover{transform:translateY(-2px);box-shadow:var(--shadow-md);border-color:var(--ink-700)}
+  .flow-node.expanded{background:var(--gold-soft);border-color:var(--gold);box-shadow:var(--shadow-lg);transform:translateY(-2px)}
+  .flow-node.start{border-radius:var(--radius-full);border-color:var(--ink-900);background:var(--ink-900);color:#fff}
+  .flow-node.start .flow-node-title{color:#fff}
+  .flow-node.start .flow-node-meta{color:rgba(255,255,255,0.7)}
+  .flow-node.end{border-radius:var(--radius-full);border-color:var(--good);background:var(--good-soft);color:var(--good)}
+  .flow-node.decision{border-radius:0;transform:rotate(45deg);min-width:120px;min-height:120px;display:flex;align-items:center;justify-content:center;text-align:center}
+  .flow-node.decision>*{transform:rotate(-45deg)}
+  .flow-node.decision .flow-node-title{font-weight:700}
+  .flow-node.exception{border-color:var(--path-exception);background:var(--gold-soft)}
+  .flow-node.failure{border-color:var(--path-failure);background:var(--bad-soft)}
+  .flow-node.handoff{border-color:var(--path-handoff);background:var(--accent-soft)}
+  .flow-node.recovery{border-color:var(--path-recovery);border-style:dotted;background:var(--surface);opacity:0.85}
+  .flow-node.alternative{border-color:var(--path-alternative);border-style:dashed}
+  .flow-node[data-filter-hidden="true"]{display:none}
+
+  .flow-node-title{font-size:12.5px;font-weight:600;line-height:1.35;color:var(--ink-900);margin-bottom:3px;word-break:keep-all}
+  .flow-node-meta{font-size:10.5px;color:var(--ink-500);line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+
+  /* path type mini tag on node */
+  .flow-node-path{position:absolute;top:-7px;right:-7px;padding:2px 6px;border-radius:var(--radius-full);font-size:9px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;background:var(--surface);border:1px solid var(--line);color:var(--ink-600);box-shadow:var(--shadow-sm)}
+  .flow-node-path.normal{background:var(--ink-900);color:#fff;border-color:var(--ink-900)}
+  .flow-node-path.exception{background:var(--path-exception);color:#fff;border-color:var(--path-exception)}
+  .flow-node-path.failure{background:var(--path-failure);color:#fff;border-color:var(--path-failure)}
+  .flow-node-path.handoff{background:var(--path-handoff);color:#fff;border-color:var(--path-handoff)}
+  .flow-node-path.recovery{background:var(--path-recovery);color:var(--ink-900);border-color:var(--path-recovery)}
+  .flow-node-path.alternative{background:var(--surface);color:var(--path-alternative);border-color:var(--path-alternative);border-style:dashed}
+
+  /* status badge bottom */
+  .flow-node-status{position:absolute;bottom:-6px;left:10px;padding:1px 5px;border-radius:var(--radius-sm);font-size:8.5px;font-weight:600;letter-spacing:0.4px;background:var(--surface);border:1px solid var(--line);color:var(--ink-500)}
+  .flow-node-status.FACT{color:var(--fact);border-color:var(--ink-300)}
+  .flow-node-status.AI_INFERENCE{color:var(--inference);border-color:var(--inference-bg);background:var(--inference-bg)}
+  .flow-node-status.UNKNOWN{color:var(--unknown);border-color:var(--unknown);background:var(--unknown-bg)}
+
+  /* ============ Expanded Detail (popover) ============ */
+  .flow-detail-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.32);z-index:200;display:none;align-items:center;justify-content:center;padding:24px}
+  .flow-detail-overlay.show{display:flex}
+  .flow-detail{background:var(--surface);border-radius:var(--radius-xl);box-shadow:var(--shadow-lg);max-width:560px;width:100%;max-height:80vh;overflow:hidden;display:flex;flex-direction:column}
+  .flow-detail-head{padding:20px 24px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:flex-start;gap:16px}
+  .flow-detail-title-block{flex:1;min-width:0}
+  .flow-detail-title{font-size:16px;font-weight:600;color:var(--ink-900);line-height:1.35}
+  .flow-detail-tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+  .tag{display:inline-flex;align-items:center;padding:2px 9px;border-radius:var(--radius-full);font-size:10.5px;font-weight:500;line-height:1.5;border:1px solid transparent}
+  .tag.path-normal{background:var(--ink-900);color:#fff;border-color:var(--ink-900)}
+  .tag.path-alternative{background:var(--surface);color:var(--path-alternative);border-color:var(--path-alternative);border-style:dashed}
+  .tag.path-exception{background:var(--gold-soft);color:var(--path-exception);border-color:var(--path-exception)}
+  .tag.path-failure{background:var(--bad-soft);color:var(--path-failure);border-color:var(--path-failure)}
+  .tag.path-handoff{background:#ccfbf1;color:var(--path-handoff);border-color:var(--path-handoff)}
+  .tag.path-recovery{background:var(--surface);color:var(--path-recovery);border-color:var(--path-recovery);border-style:dotted}
+  .tag.status-FACT{background:var(--fact-bg);color:var(--fact);border-color:var(--ink-300)}
+  .tag.status-AI_INFERENCE{background:var(--inference-bg);color:var(--inference)}
+  .tag.status-UNKNOWN{background:var(--unknown-bg);color:var(--unknown)}
+
+  .flow-detail-close{background:var(--ink-50);border:none;border-radius:50%;width:30px;height:30px;display:flex;align-items:center;justify-content:center;color:var(--ink-600);font-size:18px;cursor:pointer;flex-shrink:0;transition:all 0.15s}
+  .flow-detail-close:hover{background:var(--ink-100);color:var(--ink-900)}
+
+  .flow-detail-body{padding:20px 24px;overflow-y:auto;flex:1}
+  .flow-detail-section{margin-bottom:16px}
+  .flow-detail-section:last-child{margin-bottom:0}
+  .flow-detail-label{font-size:10px;font-weight:600;color:var(--ink-400);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px}
+  .flow-detail-text{font-size:13px;color:var(--ink-700);line-height:1.6;overflow-wrap:anywhere}
+  .flow-detail-grid{display:grid;grid-template-columns:auto 1fr;gap:8px 16px}
+  .flow-detail-grid dt{font-size:11px;font-weight:600;color:var(--ink-400);text-transform:uppercase;letter-spacing:0.04em;padding-top:2px;white-space:nowrap}
+  .flow-detail-grid dd{font-size:13px;color:var(--ink-700);line-height:1.6;overflow-wrap:anywhere}
+  .evidence-text{font-family:var(--font-mono);font-size:11px;color:var(--ink-500);background:var(--ink-50);padding:6px 10px;border-radius:var(--radius-sm);border-left:2px solid var(--gold);line-height:1.5;display:inline-block;word-break:break-all}
+
+  /* ============ Empty State ============ */
+  .empty-state{padding:48px 20px;text-align:center;color:var(--ink-400);font-size:13.5px;background:var(--surface);border:1px dashed var(--line);border-radius:var(--radius-lg)}
+
+  /* ============ Source Note ============ */
+  .source-note{margin-top:18px;padding:14px 18px;background:var(--surface);border:1px solid var(--line);border-left:3px solid var(--gold);border-radius:var(--radius-md);font-size:12px;color:var(--ink-500);line-height:1.7}
+  .source-note strong{color:var(--ink-800)}
+
+  footer{max-width:1480px;margin:0 auto;padding:0 28px 40px;color:var(--ink-400);font-size:12px}
+
+  /* ============ Responsive ============ */
+  @media(max-width:1024px){
+    .topbar-inner{padding:12px 18px;flex-wrap:wrap;gap:12px}
+    .filter-bar,.legend-bar,.content,footer{padding-left:18px;padding-right:18px}
+    .filter-grid{grid-template-columns:repeat(2,1fr)}
+    .role-tabs{max-width:100%}
+  }
+  @media(max-width:600px){
+    .filter-grid{grid-template-columns:1fr}
+    .brand-sub{display:none}
+    .count-badge{display:none}
+    .flow-canvas{flex-direction:column;align-items:stretch}
+    .flow-canvas::before{display:none}
+    .flow-node{max-width:100%}
+  }
+
+  /* ============ Reduced Motion ============ */
+  @media(prefers-reduced-motion:no-preference){
+    .flow-node{animation:flow-fade 0.3s cubic-bezier(0.4,0,0.2,1)}
+    @keyframes flow-fade{
+      from{opacity:0;transform:translateY(8px)}
+      to{opacity:1;transform:translateY(0)}
+    }
+  }
+</style>
+</head>
+<body>
+<div class="app" id="app">
+
+  <header class="topbar">
+    <div class="topbar-inner">
+      <div class="brand">
+        <div class="brand-mark" id="brandMark">U</div>
+        <div class="brand-text">
+          <div class="brand-title" id="brandTitle">用户旅程 · 流程图画板</div>
+          <div class="brand-sub" id="brandSub">User Journey · Flow Board v1.5</div>
+        </div>
+      </div>
+      <div class="topbar-actions">
+        <div class="count-badge"><span>节点</span><strong id="countText">—</strong></div>
+        <div class="role-tabs" id="roleTabs" role="tablist" aria-label="角色切换"></div>
+      </div>
+    </div>
+  </header>
+
+  <div class="filter-bar">
+    <div class="filter-grid">
+      <div class="field">
+        <span class="field-label">阶段</span>
+        <select id="stageFilter"><option value="">全部阶段</option></select>
+      </div>
+      <div class="field">
+        <span class="field-label">路径类型</span>
+        <select id="pathFilter"><option value="">全部路径</option></select>
+      </div>
+      <div class="field">
+        <span class="field-label">知识状态</span>
+        <select id="statusFilter"><option value="">全部状态</option></select>
+      </div>
+      <div class="field">
+        <span class="field-label">搜索节点</span>
+        <input id="searchInput" type="text" placeholder="输入行为/触点关键词…" />
+      </div>
+    </div>
+  </div>
+
+  <div class="legend-bar">
+    <div class="legend-inner">
+      <div class="legend-group">
+        <span class="legend-group-label">节点类型</span>
+        <span class="legend-item"><span class="legend-dot" style="background:var(--ink-900);border-radius:50%"></span>起点</span>
+        <span class="legend-item"><span class="legend-dot" style="background:var(--good)"></span>终点</span>
+        <span class="legend-item"><span class="legend-dot" style="background:var(--gold-soft);border:2px solid var(--gold);transform:rotate(45deg)"></span>决策</span>
+        <span class="legend-item"><span class="legend-dot" style="background:var(--bad-soft);border:2px solid var(--bad)"></span>失败</span>
+        <span class="legend-item"><span class="legend-dot" style="background:var(--accent-soft);border:2px solid var(--accent)"></span>交接</span>
+      </div>
+      <div class="legend-group">
+        <span class="legend-group-label">路径类型</span>
+        <span class="legend-item"><span class="legend-line normal"></span>主路径</span>
+        <span class="legend-item"><span class="legend-line alternative"></span>备选</span>
+        <span class="legend-item"><span class="legend-line exception"></span>异常</span>
+        <span class="legend-item"><span class="legend-line failure"></span>失败</span>
+        <span class="legend-item"><span class="legend-line handoff"></span>交接</span>
+        <span class="legend-item"><span class="legend-line recovery"></span>恢复</span>
+      </div>
+      <div class="legend-group">
+        <span class="legend-group-label">知识状态</span>
+        <span class="legend-item"><span class="tag status-FACT" style="font-size:9.5px">FACT</span>材料明确</span>
+        <span class="legend-item"><span class="tag status-AI_INFERENCE" style="font-size:9.5px">AI_INF</span>推断</span>
+        <span class="legend-item"><span class="tag status-UNKNOWN" style="font-size:9.5px">UNK</span>未知</span>
+      </div>
+    </div>
+  </div>
+
+  <main class="content">
+    <div class="summary-bar" id="summaryBar">
+      <b>一句话旅程叙事</b> — <span id="summaryText"></span>
+    </div>
+
+    <div class="goal-bar" id="goalBar"></div>
+
+    <div id="flowContainer"></div>
+
+    <div class="empty-state" id="emptyState" hidden>
+      <strong>没有匹配的节点</strong><br>试试调整筛选条件
+    </div>
+
+    <div class="source-note">
+      <strong>材料来源与边界</strong><br>
+      本流程图画板严格基于本任务指定的原始材料，所有事实（FACT）可追溯到原文，AI 推断和未知项已显式标注。HTML 仅用于人审浏览与筛选，**不是页面原型或业务决定**。
+    </div>
+  </main>
+
+  <footer>只读画板 · v1.5 流程图模板 · 单文件零依赖 · 支持 URL 参数 ?role=&amp&stage=&amp&path= 直达</footer>
+</div>
+
+<!-- 节点详情弹窗 -->
+<div class="flow-detail-overlay" id="detailOverlay" role="dialog" aria-modal="true" aria-labelledby="detailTitle">
+  <div class="flow-detail" id="detailContent">
+    <div class="flow-detail-head">
+      <div class="flow-detail-title-block">
+        <h3 class="flow-detail-title" id="detailTitle"></h3>
+        <div class="flow-detail-tags" id="detailTags"></div>
+      </div>
+      <button class="flow-detail-close" id="detailClose" aria-label="关闭">×</button>
+    </div>
+    <div class="flow-detail-body" id="detailBody"></div>
+  </div>
+</div>
+
+<script>
+/* =============================================================
+   用户旅程流程图画板 v1.5
+   ------------------------------------------------------------
+   使用方式：
+   1. 在 JOURNEY 填入数据
+   2. 浏览器打开即可看到流程图
+   3. 点击节点 → 弹窗查看详情
+   ============================================================= */
+
+const JOURNEY = {
+  meta: {
+    brand: "U",
+    title: "用户旅程 · 流程图画板",
+    subtitle: "User Journey · Flow Board v1.5",
+    summary: "（在此填入一句话旅程叙事）"
+  },
+  stages: [
+    /* 阶段定义 · name=阶段名 · desc=简短说明 */
+  ],
+  pathLabels: { normal:"主路径", alternative:"备选", exception:"异常", failure:"失败", handoff:"交接", recovery:"恢复" },
+  roles: [
+    /* 角色定义 */
+  ],
+  nodes: [
+    /* 节点定义 · type 可选: 'normal' | 'start' | 'end' | 'decision' | 'exception' | 'failure' | 'handoff' | 'recovery' | 'alternative' */
+  ]
+};
+
+/* ====================== State ====================== */
+const $=id=>document.getElementById(id);
+const params=new URLSearchParams(location.search);
+const state={
+  role:params.get("role")||"",
+  stage:params.get("stage")||"",
+  path:params.get("path")||"",
+  status:params.get("status")||"",
+  search:params.get("q")||""
+};
+
+/* ====================== Init Meta ====================== */
+function initMeta(){
+  if(JOURNEY.meta.brand) $("brandMark").textContent=JOURNEY.meta.brand;
+  if(JOURNEY.meta.title) $("brandTitle").textContent=JOURNEY.meta.title;
+  if(JOURNEY.meta.subtitle) $("brandSub").textContent=JOURNEY.meta.subtitle;
+  if(JOURNEY.meta.summary) $("summaryText").textContent=JOURNEY.meta.summary;
+}
+
+/* ====================== Init Role Tabs ====================== */
+function initRoleTabs(){
+  const bar=$("roleTabs");
+  // 综合视角
+  const allBtn=document.createElement("button");
+  allBtn.className="role-tab active";
+  data-role="";
+  allBtn.dataset.role="";
+  allBtn.textContent="综合视角";
+  bar.appendChild(allBtn);
+  // 各角色
+  JOURNEY.roles.forEach(r=>{
+    const b=document.createElement("button");
+    b.className="role-tab";
+    b.dataset.role=r.id;
+    b.textContent=r.name;
+    bar.appendChild(b);
+  });
+  bar.addEventListener("click",e=>{
+    const btn=e.target.closest(".role-tab");
+    if(!btn) return;
+    bar.querySelectorAll(".role-tab").forEach(x=>x.classList.toggle("active",x===));
+    state.role=btn.dataset.role;
+    syncURL();
+    render();
+  });
+  // 恢复 URL
+  if(state.role){
+    const btn=bar.querySelector(`.role-tab[data-role="${state.role}"]`);
+    if(btn) btn.classList.add("active");
+    else bar.firstElementChild.classList.add("active");
+  }
+}
+
+/* ====================== Init Filters ====================== */
+function initFilters(){
+  const stageSel=$("stageFilter");
+  JOURNEY.stages.forEach((s,i)=>{
+    const opt=document.createElement("option");
+    opt.value=String(i);
+    opt.textContent=`${i+1}. ${s.name}`;
+    stageSel.appendChild(opt);
+  });
+  const pathSel=$("pathFilter");
+  Object.entries(JOURNEY.pathLabels).forEach(([val,label])=>{
+    const opt=document.createElement("option");
+    opt.value=val;
+    opt.textContent=label;
+    pathSel.appendChild(opt);
+  });
+  const statusSel=$("statusFilter");
+  ["FACT","AI_INFERENCE","UNKNOWN","CONFLICT"].forEach(s=>{
+    const opt=document.createElement("option");
+    opt.value=s;
+    opt.textContent=s;
+    statusSel.appendChild(opt);
+  });
+
+  if(state.stage) stageSel.value=state.stage;
+  if(state.path) pathSel.value=state.path;
+  if(state.status) statusSel.value=state.status;
+
+  ["stageFilter","pathFilter","statusFilter"].forEach(id=>{
+    $(id).addEventListener("change",e=>{
+      const map={stageFilter:"stage",pathFilter:"path",statusFilter:"status"};
+      state[map[id]]=e.target.value;
+      syncURL();
+      render();
+    });
+  });
+  $("searchInput").addEventListener("input",e=>{
+    state.search=e.target.value;
+    syncURL();
+    render();
+  });
+}
+
+/* ====================== URL Sync ====================== */
+function syncURL(){
+  const q=new URLSearchParams();
+  if(state.role) q.set("role",state.role);
+  if(state.stage) q.set("stage",state.stage);
+  if(state.path) q.set("path",state.path);
+  if(state.status) q.set("status",state.status);
+  if(state.search) q.set("q",state.search);
+  history.replaceState(null,"",`${location.pathname}${q.toString()?"? "+q:""}${location.hash}`);
+}
+
+/* ====================== Filter ====================== */
+function filtered(){
+  const kw=state.search.trim().toLowerCase();
+  return JOURNEY.nodes.filter(n=>{
+    if(state.role && n.role!==state.role && n.role!=="") return false;
+    if(state.stage && String(n.stage)!==state.stage && n.stage!=="") return false;
+    if(state.path && n.path!==state.path) return false;
+    if(state.status && n.status!==state.status) return false;
+    if(kw){
+      const blob=`${n.title||""} ${n.desc||""} ${n.behavior||""} ${n.touchpoint||""} ${n.evidence||""}`.toLowerCase();
+      if(!blob.includes(kw)) return false;
+    }
+    return true;
+  });
+}
+
+/* ====================== Detail Modal ====================== */
+function openDetail(node){
+  $("detailTitle").textContent=node.title || "(无标题)";
+  $("detailTags").innerHTML=`
+    <span class="tag path-${node.path||"normal"}">${JOURNEY.pathLabels[node.path]||node.path||""}</span>
+    <span class="tag status-${node.status||"FACT"}">${node.status||""}</span>
+    ${node.type?`<span class="tag" style="background:var(--ink-50);color:var(--ink-700);border-color:var(--line)">${node.type}</span>`:""}
+  `;
+  $("detailBody").innerHTML=`
+    ${node.desc?`<div class="flow-detail-section"><div class="flow-detail-label">描述</div><div class="flow-detail-text">${esc(node.desc)}</div></div>`:""}
+    <dl class="flow-detail-grid">
+      ${node.role?`<dt>角色</dt><dd>${esc(roleName(node.role))}</dd>`:""}
+      ${node.stage?`<dt>阶段</dt><dd>${esc(stageName(node.stage))}</dd>`:""}
+      ${node.behavior?`<dt>行为</dt><dd>${esc(node.behavior)}</dd>`:""}
+      ${node.touchpoint?`<dt>触点</dt><dd>${esc(node.touchpoint)}</dd>`:""}
+      ${node.result?`<dt>结果</dt><dd>${esc(node.result)}</dd>`:""}
+      ${node.evidence?`<dt>证据</dt><dd><span class="evidence-text">${esc(node.evidence)}</span></dd>`:""}
+    </dl>
+  `;
+  $("detailOverlay").classList.add("show");
+}
+function closeDetail(){
+  $("detailOverlay").classList.remove("show");
+}
+function roleName(id){
+  const r=JOURNEY.roles.find(x=>x.id===id);
+  return r?r.name:id;
+}
+function stageName(id){
+  const s=JOURNEY.stages[id];
+  return s?s.name:`#${id}`;
+}
+function esc(s){return String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[c]))}
+
+/* ====================== Render ====================== */
+function render(){
+  const list=filtered();
+  $("countText").textContent=list.length+" / / "+JOURNEY.nodes.length;
+
+  // 目标栏
+  const currentRole=state.role?JOURNEY.roles.find(r=>r.id===state.role):null;
+  const goalBar=$("goalBar");
+  if(currentRole){
+    goalBar.innerHTML=`<span class="role-tag">${esc(currentRole.name)}</span> <b>当前角色视角</b> · 共 ${list.length} 个节点${list.length!==JOURNEY.nodes.length?'（已应用筛选）':''}`;
+  } else {
+    const roleNames=JOURNEY.roles.map(r=>r.name).join("、");
+    goalBar.innerHTML=`<span class="role-tag">综合视角</span> <b>全角色旅程总览</b> — 涵盖 <b>${roleNames}</b> 共 ${JOURNEY.roles.length} 个角色，覆盖 <b>${JOURNEY.stages.length} 个阶段</b> 共 <b>${JOURNEY.nodes.length} 个节点</b>。`;
+  }
+
+  const container=$("flowContainer");
+  if(list.length===0){
+    container.innerHTML="";
+    $("emptyState").hidden=false;
+    return;
+  }
+  $("emptyState").hidden=true;
+
+  // 按阶段分组
+  const groups={};
+  JOURNEY.stages.forEach((s,i)=>groups[i]={...s,nodes:[]});
+  list.forEach(n=>{ if(groups[n.stage]) groups[n.stage].nodes.push(n); });
+
+  container.innerHTML=JOURNEY.stages.map((stage,idx)=>{
+    const nodes=groups[idx].nodes;
+    if(nodes.length===0) return "";
+    return `
+      <section class="flow-section" id="stage-${idx}">
+        <div class="flow-header">
+          <div class="flow-title">
+            <div class="flow-stage-num">${idx+1}</div>
+            <div class="flow-stage-info">
+              <h3>${esc(stage.name)}</h3>
+              <div class="stage-desc">${esc(stage.desc||"")} · ${nodes.length} 个节点</div>
+            </div>
+          </div>
+          <div class="flow-actions">
+            <button class="flow-action" data-action="expand" data-stage="${idx}">全部展开</button>
+            <button class="flow-action" data-action="collapse" data-stage="${idx}">全部折叠</button>
+          </div>
+        </div>
+        <div class="flow-canvas">
+          ${nodes.map(n=>`
+            <article class="flow-node ${n.type||""} ${n.path||"normal"}" data-node-id="${esc(n.id)}" data-stage="${idx}">
+              ${n.path?`<span class="flow-node-path ${n.path}">${esc(JOURNEY.pathLabels[n.path]||n.path)}</span>`:""}
+              <div class="flow-node-title">${esc(n.title||"(无标题)")}</div>
+              ${n.desc?`<div class="flow-node-meta">${esc(n.desc)}</div>`:""}
+              ${n.status?`<span class="flow-node-status ${n.status}">${esc(n.status)}</span>`:""}
+            </article>
+          `).join("")}
+        </div>
+      </section>
+    `;
+  }).filter(Boolean).join("");
+
+  // 绑定节点点击
+  container.querySelectorAll(".flow-node").forEach(el=>{
+    el.addEventListener("click",e=>{
+      e.stopPropagation();
+      const id=el.dataset.nodeId;
+      const node=list.find(n=>n.id===id);
+      if(node) openDetail(node);
+    });
+  });
+  // 阶段折叠/展开
+  container.querySelectorAll(".flow-action").forEach(btn=>{
+    btn.addEventListener("click",e=>{
+      e.stopPropagation();
+      const action=btn.dataset.action;
+      const stage=btn.dataset.stage;
+      const section=$("stage-"+stage);
+      if(!section) return;
+      section.querySelectorAll(".flow-node").forEach(el=>el.classList.toggle("expanded", action==="expand"));
+      section.querySelectorAll(".flow-action").forEach(b=>b.classList.remove("active"));
+      btn.classList.add("active");
+    });
+  });
+}
+
+/* ====================== Detail Close Handlers ====================== */
+$("detailClose").addEventListener("click",closeDetail);
+$("detailOverlay").addEventListener("click",e=>{
+  if(e.target===e.currentTarget) closeDetail();
+});
+document.addEventListener("keydown",e=>{
+  if(e.key==="Escape") closeDetail();
+});
+
+/* ====================== Init ====================== */
+function init(){
+  initMeta();
+  initRoleTabs();
+  initFilters();
+  render();
+  if(location.hash){
+    const id=location.hash.slice(1);
+    setTimeout(()=>{
+      const node=JOURNEY.nodes.find(n=>n.id===id);
+      if(node) openDetail(node);
+    }, 100);
+  }
+}
+
+init();
+</script>
+</body>
+</html>
