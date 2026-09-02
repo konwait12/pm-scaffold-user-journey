@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>用户旅程 · 总览+流程图画板 v1.6</title>
+<title>用户旅程 · 总览+流程图画板 v1.7</title>
 <style>
   :root {
     color-scheme: light;
@@ -93,41 +93,69 @@
   .view-btn.active{background:var(--surface);color:var(--ink-900);box-shadow:var(--shadow-sm)}
   .view-btn.active small{color:var(--ink-400)}
 
-  /* Overview (总览图) */
+  /* Overview (总览图 · 程序流程图) */
   .overview-wrap{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-xl);box-shadow:var(--shadow-md);padding:28px 24px 20px;overflow-x:auto}
-  .overview{min-width:1320px;position:relative}
-  .ov-track{position:relative;display:grid;grid-template-columns:repeat(6,minmax(200px,1fr));gap:12px}
-  .ov-stage{position:relative;padding-top:8px;min-height:280px}
-  .ov-stage-head{position:sticky;top:0;background:var(--surface);padding:6px 8px 10px;text-align:center;border-bottom:1px solid var(--line-soft);z-index:2}
+  .overview{min-width:1360px;position:relative}
+  .ov-track{position:relative;display:grid;grid-template-columns:repeat(6,minmax(210px,1fr));gap:14px}
+  .ov-edges{position:absolute;inset:0;z-index:0;pointer-events:none}
+  .ov-edges path{fill:none}
+  .ov-edges .e-main{stroke:var(--ink-900);stroke-width:2.4}
+  .ov-edges .e-inline{stroke:var(--ink-400);stroke-width:1.6}
+  .ov-edges .e-hold{stroke:var(--accent);stroke-width:1.4;stroke-dasharray:5 3}
+  .ov-edges .e-exc{stroke:var(--path-exception);stroke-width:1.4;stroke-dasharray:6 3}
+  .ov-edges .e-fail{stroke:var(--path-failure);stroke-width:1.4;stroke-dasharray:6 3}
+  .ov-edges .e-rec{stroke:var(--path-recovery);stroke-width:1.4;stroke-dasharray:2 4}
+  .ov-edges .e-alt{stroke:var(--path-alternative);stroke-width:1.4;stroke-dasharray:4 3}
+  .ov-edges text{font:600 10px var(--font-sans);fill:var(--ink-500)}
+  .ov-edges .lbl-exc,.ov-edges .lbl-fail{fill:var(--path-failure)}
+
+  .ov-stage{position:relative;z-index:1;padding-top:8px;min-height:300px;display:flex;flex-direction:column}
+  .ov-stage-head{background:var(--surface);padding:6px 8px 10px;text-align:center;border-bottom:1px solid var(--line-soft);z-index:2}
   .ov-stage-num{display:inline-block;width:26px;height:26px;border-radius:50%;background:var(--ink-900);color:#fff;font-family:var(--font-mono);font-size:11px;font-weight:700;line-height:26px;text-align:center;margin-bottom:4px}
   .ov-stage-name{font-size:12.5px;font-weight:600;color:var(--ink-900)}
   .ov-stage-desc{font-size:10px;color:var(--ink-400);margin-top:2px;line-height:1.4}
-  .ov-lane{display:flex;flex-direction:column;gap:8px;padding-top:8px}
-  .ov-node{position:relative;border:1.5px solid var(--ink-200);border-left:4px solid var(--ink-400);border-radius:var(--radius-md);padding:7px 8px;background:var(--surface);font-size:11px;line-height:1.35;cursor:pointer;transition:all 0.15s cubic-bezier(0.4,0,0.2,1)}
-  .ov-node:hover{transform:translateX(2px);box-shadow:var(--shadow-md);border-color:var(--ink-400)}
-  .ov-node .ov-title{font-weight:600;color:var(--ink-900)}
-  .ov-node .ov-sub{color:var(--ink-500);font-size:10px;margin-top:2px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-  .ov-node .ov-role{position:absolute;top:5px;right:6px;font-size:8.5px;font-weight:700;letter-spacing:0.3px;padding:1px 5px;border-radius:var(--radius-full);background:var(--ink-50);color:var(--ink-500)}
-  .ov-node.normal{border-left-color:var(--path-normal)}
-  .ov-node.alternative{border-left-color:var(--path-alternative);border-left-style:dashed}
-  .ov-node.exception{border-left-color:var(--path-exception);background:var(--gold-soft)}
-  .ov-node.failure{border-left-color:var(--path-failure);background:var(--bad-soft)}
-  .ov-node.handoff{border-left-color:var(--path-handoff);background:var(--accent-soft)}
-  .ov-node.recovery{border-left-color:var(--path-recovery);border-left-style:dotted}
-  /* 主路径节点高亮 */
-  .ov-node.normal{box-shadow:inset 0 0 0 1px var(--surface)}
-  .ov-lane .ov-node.normal{border-color:var(--ink-900)}
-  .ov-path-label{font-size:9px;font-weight:700;color:var(--ink-400);letter-spacing:0.4px;text-transform:uppercase;margin:2px 2px 0;display:flex;align-items:center;gap:4px}
-  .ov-path-label::after{content:"";flex:1;height:1px;background:var(--line);margin-left:4px}
+  .ov-lane{display:flex;flex-direction:column;gap:10px;padding-top:14px;position:relative;flex:1}
+
+  /* 程序流程图节点形状 */
+  .ov-node{position:relative;border:1.8px solid var(--ink-300);border-radius:var(--radius-md);padding:8px 10px;background:var(--surface);font-size:11px;line-height:1.35;cursor:pointer;transition:all 0.15s cubic-bezier(0.4,0,0.2,1);text-align:center;margin:0 6px}
+  .ov-node:hover{transform:translateX(3px);box-shadow:var(--shadow-md);border-color:var(--ink-900)}
+  .ov-node .ov-title{font-weight:600;color:var(--ink-900);display:inline}
+  .ov-node .ov-sub{color:var(--ink-500);font-size:10px;margin-top:2px;display:block}
+  .ov-node .ov-role{position:absolute;top:-8px;left:8px;font-size:8px;font-weight:700;letter-spacing:0.3px;padding:0 5px;border-radius:var(--radius-full);background:var(--ink-900);color:#fff;line-height:15px}
+  /* 起点/终点：胶囊 */
+  .ov-node.type-start{border-radius:var(--radius-full);border-color:var(--ink-900);background:var(--ink-900);color:#fff}
+  .ov-node.type-start .ov-title,.ov-node.type-start .ov-sub{color:#fff}
+  .ov-node.type-start .ov-role{background:#fff;color:var(--ink-900)}
+  .ov-node.type-end{border-radius:var(--radius-full);border-color:var(--good);background:var(--good-soft);color:var(--good)}
+  .ov-node.type-end .ov-title{color:var(--good)}
+  .ov-node.type-end .ov-role{background:var(--good);color:#fff}
+  /* 决策：菱形 */
+  .ov-node.type-decision{background:transparent;border:none;padding:0;cursor:pointer;display:flex;align-items:center;justify-content:center}
+  .ov-node.type-decision .ov-diamond{width:120px;height:120px;background:var(--surface);border:2.4px solid var(--gold);transform:rotate(45deg);display:flex;align-items:center;justify-content:center;box-shadow:var(--shadow-sm)}
+  .ov-node.type-decision .ov-diamond>span{transform:rotate(-45deg);font-weight:700;font-size:11px;color:var(--ink-900);text-align:center;line-height:1.3}
+  .ov-node.type-decision .ov-role{display:none}
+  /* 路径分色左边框 */
+  .ov-node.normal{border-color:var(--ink-400)}
+  .ov-node.alternative{border-color:var(--path-alternative);border-style:dashed}
+  .ov-node.exception{border-color:var(--path-exception);background:var(--gold-soft)}
+  .ov-node.failure{border-color:var(--path-failure);background:var(--bad-soft)}
+  .ov-node.handoff{border-color:var(--path-handoff);background:var(--accent-soft)}
+  .ov-node.recovery{border-color:var(--path-recovery);border-style:dotted}
+  /* 主路径节点黑边 */
+  .ov-node.is-main{border-color:var(--ink-900);border-width:2.2px}
+  .ov-node.is-main .ov-role{background:var(--ink-900)}
+
   .ov-legend{display:flex;flex-wrap:wrap;gap:10px 18px;justify-content:center;padding:14px 8px 4px;font-size:11px;color:var(--ink-600)}
   .ov-legend-item{display:inline-flex;align-items:center;gap:5px}
-  .ov-legend-swatch{width:14px;height:10px;border-radius:3px;flex:none}
-  .ov-legend-swatch.normal{background:var(--surface);border:1px solid var(--ink-900);border-left:4px solid var(--path-normal)}
-  .ov-legend-swatch.exception{background:var(--gold-soft);border:1px solid var(--path-exception);border-left:4px solid var(--path-exception)}
-  .ov-legend-swatch.failure{background:var(--bad-soft);border:1px solid var(--path-failure);border-left:4px solid var(--path-failure)}
-  .ov-legend-swatch.handoff{background:var(--accent-soft);border:1px solid var(--path-handoff);border-left:4px solid var(--path-handoff)}
-  .ov-legend-swatch.recovery{background:var(--surface);border:1px dashed var(--path-recovery);border-left:4px solid var(--path-recovery);border-left-style:dotted}
-  .ov-legend-swatch.alternative{background:var(--surface);border:1px dashed var(--path-alternative);border-left:4px solid var(--path-alternative)}
+  .ov-legend-swatch{width:18px;height:0;border-top:2px solid;flex:none}
+  .ov-legend-swatch.main{border-color:var(--ink-900)}
+  .ov-legend-swatch.inline{border-color:var(--ink-400)}
+  .ov-legend-swatch.exc{border-top-style:dashed;border-color:var(--path-exception)}
+  .ov-legend-swatch.fail{border-top-style:dashed;border-color:var(--path-failure)}
+  .ov-legend-swatch.alt{border-top-style:dashed;border-color:var(--path-alternative)}
+  .ov-legend-swatch.handoff{border-top-style:dashed;border-color:var(--path-handoff)}
+  .ov-legend-swatch.rec{border-top-style:dotted;border-color:var(--path-recovery)}
+
 
   .summary-bar{background:var(--surface);border:1px solid var(--line);border-left:3px solid var(--gold);border-radius:var(--radius-lg);padding:14px 20px;margin-bottom:18px;font-size:13.5px;color:var(--ink-600);line-height:1.7}
   .summary-bar b{color:var(--ink-900)}
@@ -350,7 +378,7 @@
     </div>
   </main>
 
-  <footer>只读画板 · v1.6 总览+流程图模板 · 单文件零依赖 · 支持 URL 参数 ?role=&amp&stage=&amp&path= 直达</footer>
+  <footer>只读画板 · v1.7 总览+流程图模板 · 单文件零依赖 · 支持 URL 参数 ?role=&amp&stage=&amp&path= 直达</footer>
 </div>
 
 <div class="flow-detail-overlay" id="detailOverlay" role="dialog" aria-modal="true" aria-labelledby="detailTitle">
@@ -371,7 +399,7 @@ const JOURNEY = {
   meta: {
     brand: "U",
     title: "用户旅程 · 总览+流程图画板",
-    subtitle: "User Journey · Overview + Flow Board v1.6",
+    subtitle: "User Journey · Flow Board v1.7",
     summary: "（在此填入一句话旅程叙事）"
   },
   stages: [
@@ -394,6 +422,7 @@ const JOURNEY = {
   nodes: [
     /* ============ S1 邀请分发 ============ */
     { id:"g-s1-1", role:"guest", stage:0, path:"normal", status:"FACT", type:"start", title:"收到 FA 的邀请函", desc:"FA 通过邮件/微信发送邀请码", behavior: "查看邀请函，准备扫码", touchpoint: "邮件/微信（服务号外）", result: "获得入口", evidence:"FACT · rsvp-as-is.md L31-L41" },
+    { id:"g-s1-d", role:"guest", stage:0, path:"normal", status:"FACT", type:"decision", title:"白名单?", desc:"手机号是否在白名单" },
     { id:"fa-s1-1", role:"fa", stage:0, path:"handoff", status:"FACT", type:"handoff", title:"发送邀请码/邀请函", desc:"FA 在销售仪式或活动前分发", behavior: "发送邀请码/邀请函", touchpoint: "邮件/微信", result: "客户收到邀请", evidence:"FACT · rsvp-as-is.md L31-L33" },
     { id:"fa-s1-2", role:"fa", stage:0, path:"normal", status:"FACT", title:"按命名规则制作 E-invitation", desc:"25S EP BJ 0220 / By Session 含时段", behavior: "按 Recap + Sketch 配置", touchpoint: "Sketch template + Figma KV", result: "邀请函就绪", evidence:"FACT · rsvp-ops.md L91-L92" },
     { id:"m-s1-0", role:"mins", stage:0, path:"handoff", status:"FACT", type:"handoff", title:"按 Recap 配置场次数据", desc:"提供接口给 CCE 后端", behavior: "按 Recap 配置场次", touchpoint: "Minutes Portal", result: "场次数据就绪", evidence:"FACT · rsvp-ops.md L61-L62" },
@@ -405,6 +434,7 @@ const JOURNEY = {
     { id:"p-s1-1", role:"plus", stage:1, path:"normal", status:"FACT", title:"收到主客的携伴分享链接", desc:"由主客邀请的同行朋友", behavior: "查看微信聊天分享", touchpoint: "微信聊天、微信好友卡片", result: "待注册", evidence:"FACT · rsvp-as-is.md L122-L125" },
 
     /* ============ S3 注册登记 ============ */
+    { id:"g-s3-d", role:"guest", stage:2, path:"normal", status:"FACT", type:"decision", title:"已注册?", desc:"是否已有数字账户" },
     { id:"g-s3-1", role:"guest", stage:2, path:"normal", status:"FACT", title:"已注册 → 直接进入预约页", desc:"已注册客户跳过手机号注册", behavior: "系统识别手机号已注册", touchpoint: "服务号识别", result: "进入场次选择", evidence:"FACT · rsvp-as-is.md L97-L101" },
     { id:"g-s3-2", role:"guest", stage:2, path:"alternative", status:"FACT", title:"未注册 → 填手机号注册", desc:"未注册客户需要完成手机号验证", behavior: "输入手机号 → 验证码 → 提交", touchpoint: "注册页面", result: "注册成功，进入预约", evidence:"FACT · rsvp-as-is.md L97-L101" },
     { id:"g-s3-3", role:"guest", stage:2, path:"alternative", status:"FACT", title:"特殊活动 → 个人信息确认弹窗", desc:"Show & Party / All-in 等特殊活动", behavior: "查看个人信息 → 确认或修改", touchpoint: "个人信息确认弹窗", result: "信息确认通过", evidence:"FACT · rsvp-as-is.md L73-L83" },
@@ -415,6 +445,7 @@ const JOURNEY = {
     { id:"fa-s3-1", role:"fa", stage:2, path:"handoff", status:"FACT", title:"答疑白名单/链接失效问题", desc:"客户异常后，FA 提供解决方案", behavior: "微信/电话联系客户", touchpoint: "微信、电话、精品店", result: "客户得到解决", evidence:"FACT · rsvp-as-is.md L128-L160" },
 
     /* ============ S4 场次预约 ============ */
+    { id:"g-s4-d", role:"guest", stage:3, path:"normal", status:"FACT", type:"decision", title:"场次可预约?", desc:"名额/时间是否可用" },
     { id:"g-s4-1", role:"guest", stage:3, path:"normal", status:"FACT", title:"选择活动场次", desc:"By day 直接展示；By session 场次选择器（>8 场按日期 Tab）", behavior: "选择场次", touchpoint: "场次选择组件", result: "场次确定", evidence:"FACT · rsvp-ops L92" },
     { id:"g-s4-2", role:"guest", stage:3, path:"normal", status:"FACT", title:"设置携伴人数", desc:"默认 0，最多 1 位", behavior: "+/- 选择携伴人数", touchpoint: "携伴人数选择组件", result: "携伴人数确定", evidence:"FACT · rsvp-ops L92" },
     { id:"g-s4-3", role:"guest", stage:3, path:"handoff", status:"FACT", type:"handoff", title:"生成携伴分享链接", desc:"提交后生成携伴专属分享链接", behavior: "复制/转发携伴链接给好友", touchpoint: "携伴分享页 / 微信好友选择器", result: "好友可独立注册预约", evidence:"FACT · rsvp-as-is.md L122-L125" },
@@ -679,7 +710,7 @@ function render(){
   });
 }
 
-/* ====================== 总览图（横向整条旅程） ====================== */
+/* ====================== 总览图（程序流程图 · SVG 连线） ====================== */
 function renderOverview(list){
   const wrap=$("overviewContainer");
   const pathOrder={normal:0, alternative:1, handoff:2, exception:3, recovery:4, failure:5};
@@ -687,16 +718,29 @@ function renderOverview(list){
   JOURNEY.stages.forEach((s,i)=>groups[i]=[]);
   list.forEach(n=>{ if(groups[n.stage]) groups[n.stage].push(n); });
 
+  // 每个阶段：主路径节点（normal）在前，分支节点在后
   const stageCols=JOURNEY.stages.map((stage,idx)=>{
-    const nodes=groups[idx].slice().sort((a,b)=>(pathOrder[a.path]??9)-(pathOrder[b.path]??9));
+    const nodes=groups[idx].slice().sort((a,b)=>{
+      const pa=a.type==="decision"?0:(a.path==="normal"?1:(pathOrder[a.path]??9));
+      const pb=b.type==="decision"?0:(b.path==="normal"?1:(pathOrder[b.path]??9));
+      return pa-pb;
+    });
     if(nodes.length===0) return `<div class="ov-stage"><div class="ov-stage-head"><div class="ov-stage-num">${idx+1}</div><div class="ov-stage-name">${esc(stage.name)}</div></div><div class="ov-lane"><div style="font-size:10px;color:var(--ink-300);text-align:center;padding:12px 0">—（未参与）</div></div></div>`;
-    const lane=nodes.map(n=>`
-      <article class="ov-node ${n.path||"normal"}" data-node-id="${esc(n.id)}">
-        <span class="ov-role">${esc(roleShort(n.role))}</span>
-        <div class="ov-title">${esc(n.title||"(无标题)")}</div>
-        ${n.desc?`<div class="ov-sub">${esc(n.desc)}</div>`:""}
-      </article>
-    `).join("");
+    const lane=nodes.map((n,ni)=>{
+      const isMain=(n.path==="normal" && n.type!=="decision");
+      if(n.type==="decision"){
+        return `
+          <div class="ov-node type-decision" data-node-id="${esc(n.id)}" data-stage="${idx}" data-order="${ni}">
+            <div class="ov-diamond"><span>${esc(n.title||"决策?")}</span></div>
+          </div>`;
+      }
+      return `
+        <article class="ov-node ${n.type==="start"?"type-start":n.type==="end"?"type-end":""} ${n.path||"normal"} ${isMain?"is-main":""}" data-node-id="${esc(n.id)}" data-stage="${idx}" data-order="${ni}">
+          <span class="ov-role">${esc(roleShort(n.role))}</span>
+          <span class="ov-title">${esc(n.title||"(无标题)")}</span>
+          ${n.desc?`<span class="ov-sub">${esc(n.desc)}</span>`:""}
+        </article>`;
+    }).join("");
     return `
       <div class="ov-stage" data-stage="${idx}">
         <div class="ov-stage-head">
@@ -711,24 +755,27 @@ function renderOverview(list){
 
   const legend=`
     <div class="ov-legend">
-      <span class="ov-legend-item"><span class="ov-legend-swatch normal"></span>主路径</span>
-      <span class="ov-legend-item"><span class="ov-legend-swatch alternative"></span>备选</span>
+      <span class="ov-legend-item"><span class="ov-legend-swatch main"></span>主路径</span>
+      <span class="ov-legend-item"><span class="ov-legend-swatch inline"></span>阶段内流转</span>
+      <span class="ov-legend-item"><span class="ov-legend-swatch alt"></span>备选</span>
       <span class="ov-legend-item"><span class="ov-legend-swatch handoff"></span>交接</span>
-      <span class="ov-legend-item"><span class="ov-legend-swatch exception"></span>异常</span>
-      <span class="ov-legend-item"><span class="ov-legend-swatch recovery"></span>恢复</span>
-      <span class="ov-legend-item"><span class="ov-legend-swatch failure"></span>失败</span>
-      <span class="ov-legend-item" style="margin-left:6px;color:var(--ink-400)">← 点击任意节点查看详情</span>
+      <span class="ov-legend-item"><span class="ov-legend-swatch exc"></span>异常</span>
+      <span class="ov-legend-item"><span class="ov-legend-swatch rec"></span>恢复</span>
+      <span class="ov-legend-item"><span class="ov-legend-swatch fail"></span>失败</span>
+      <span class="ov-legend-item" style="margin-left:6px;color:var(--ink-400)">⬡决策  ◍起止 · 点击节点看详情</span>
     </div>`;
 
   wrap.innerHTML=`
     <div class="overview-wrap">
-      <div class="overview">
+      <div class="overview" id="overviewSvg">
+        <svg class="ov-edges" id="ovEdges"></svg>
         <div class="ov-track">${stageCols}</div>
       </div>
       ${legend}
     </div>
   `;
 
+  // 绑定点击
   wrap.querySelectorAll(".ov-node").forEach(el=>{
     el.addEventListener("click",e=>{
       e.stopPropagation();
@@ -737,6 +784,100 @@ function renderOverview(list){
       if(node) openDetail(node);
     });
   });
+
+  // 画连线
+  requestAnimationFrame(drawOverviewEdges);
+}
+
+/* 用节点实际位置画 SVG 连线 */
+function drawOverviewEdges(){
+  const svg=$("ovEdges");
+  const ov=$("overviewSvg");
+  if(!svg || !ov) return;
+  const rect=ov.getBoundingClientRect();
+  svg.setAttribute("width",ov.scrollWidth);
+  svg.setAttribute("height",ov.scrollHeight);
+  svg.style.width=ov.scrollWidth+"px";
+  svg.style.height=ov.scrollHeight+"px";
+
+  const nodes=Array.from(document.querySelectorAll(".ov-node"));
+  if(nodes.length<2) return;
+
+  const defs=`<defs>
+    <marker id="ovA" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--ink-900)"/></marker>
+    <marker id="ovA2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--ink-400)"/></marker>
+    <marker id="ovAe" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--path-exception)"/></marker>
+    <marker id="ovAf" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--path-failure)"/></marker>
+    <marker id="ovAh" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--path-handoff)"/></marker>
+    <marker id="ovAr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--path-recovery)"/></marker>
+    <marker id="ovAa" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--path-alternative)"/></marker>
+  </defs>`;
+
+  const x=(el)=>el.getBoundingClientRect().left-rect.left+el.getBoundingClientRect().width/2;
+  const xl=(el)=>el.getBoundingClientRect().left-rect.left;
+  const xr=(el)=>el.getBoundingClientRect().right-rect.left;
+  const yTop=(el)=>el.getBoundingClientRect().top-rect.top;
+  const yBot=(el)=>el.getBoundingClientRect().bottom-rect.top;
+
+  // 按阶段分组
+  const byStage={};
+  nodes.forEach(n=>{ const s=n.dataset.stage; (byStage[s]=byStage[s]||[]).push(n); });
+
+  const out=[defs];
+
+  // 1) 阶段内：纵向连线（每个阶段按顺序从上到下）
+  Object.keys(byStage).forEach(si=>{
+    const arr=byStage[si].sort((a,b)=>+a.dataset.order-+b.dataset.order);
+    for(let i=0;i<arr.length-1;i++){
+      const a=arr[i], b=arr[i+1];
+      const ax=x(a), ay=yBot(a), bx=x(b), by=yTop(b);
+      // 同一列：直线向下
+      out.push(`<path class="e-inline" d="M ${ax} ${ay} L ${ax} ${by-2}" marker-end="url(#ovA2)"/>`);
+    }
+  });
+
+  // 2) 阶段间：主路径贯穿（每阶段最后一个 normal/主节点 → 下阶段第一个主节点）
+  const stageKeys=Object.keys(byStage).sort((a,b)=>+a-+b);
+  for(let i=0;i<stageKeys.length-1;i++){
+    const cur=byStage[stageKeys[i]].sort((a,b)=>+a.dataset.order-+b.dataset.order);
+    const nxt=byStage[stageKeys[i+1]].sort((a,b)=>+a.dataset.order-+b.dataset.order);
+    // 当前阶段最后一个 is-main 或 normal；下一阶段第一个 is-main 或 normal
+    const from=cur.slice().reverse().find(n=>n.classList.contains("is-main")||n.classList.contains("normal"))||cur[cur.length-1];
+    const to=nxt.find(n=>n.classList.contains("is-main")||n.classList.contains("normal"))||nxt[0];
+    if(!from||!to) continue;
+    const fx=x(from), fy=yBot(from), tx=x(to), ty=yTop(to);
+    const midY=fy+26;
+    // 向右 → 再向下 → 再向右进目标
+    out.push(`<path class="e-main" d="M ${fx} ${fy} C ${fx} ${midY}, ${tx} ${midY}, ${tx} ${ty-2}" marker-end="url(#ovA)"/>`);
+  }
+
+  // 3) 分支节点（非 normal）：从同阶段第一个主节点用虚线连过来
+  Object.keys(byStage).forEach(si=>{
+    const arr=byStage[si].sort((a,b)=>+a.dataset.order-+b.dataset.order);
+    const main=arr.find(n=>n.classList.contains("is-main"));
+    arr.forEach((n)=>{
+      if(n.classList.contains("is-main")) return;
+      if(n.classList.contains("type-decision")) return;
+      const cls=n.classList.contains("exception")?"e-exc"
+        :n.classList.contains("failure")?"e-fail"
+        :n.classList.contains("handoff")?"e-hold"
+        :n.classList.contains("recovery")?"e-rec"
+        :n.classList.contains("alternative")?"e-alt":"e-inline";
+      const mk=n.classList.contains("exception")?"ovAe"
+        :n.classList.contains("failure")?"ovAf"
+        :n.classList.contains("handoff")?"ovAh"
+        :n.classList.contains("recovery")?"ovAr"
+        :n.classList.contains("alternative")?"ovAa":"ovA2";
+      // 分支节点在下面：从主节点右侧/下侧 连到分支节点顶部
+      const src=main||arr[0];
+      if(!src||src===n) return;
+      const sx=x(src), sy=src.classList.contains("is-main")?yBot(src):yTop(src);
+      const nx=x(n), ny=yTop(n);
+      out.push(`<path class="${cls}" d="M ${sx} ${sy} C ${sx} ${ny-14}, ${nx} ${ny-14}, ${nx} ${ny-2}" marker-end="url(#${mk})"/>`);
+    });
+  });
+
+  svg.innerHTML=out.join("");
 }
 
 function roleShort(id){
