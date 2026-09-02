@@ -3,9 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>用户旅程 · 流程图画板（v1.5 · 模板）</title>
+<title>用户旅程 · 总览+流程图画板 v1.6</title>
 <style>
-  /* ============ Design Tokens (warm black + gold · luxury) ============ */
   :root {
     color-scheme: light;
     --ink-900:#0a0a0a; --ink-800:#171717; --ink-700:#262626; --ink-600:#404040;
@@ -38,10 +37,9 @@
   h1,h2,h3,h4{margin:0;font-weight:600;color:var(--ink-900)}
   p{margin:0}
 
-  /* ============ App Shell ============ */
   .app{min-height:100vh;display:flex;flex-direction:column}
 
-  /* ============ Top Bar ============ */
+  /* Top Bar */
   .topbar{position:sticky;top:0;z-index:100;background:rgba(255,255,255,0.85);backdrop-filter:saturate(180%) blur(12px);-webkit-backdrop-filter:saturate(180%) blur(12px);border-bottom:1px solid var(--line)}
   .topbar-inner{max-width:1480px;margin:0 auto;padding:14px 28px;display:flex;align-items:center;justify-content:space-between;gap:24px}
   .brand{display:flex;align-items:center;gap:12px;min-width:0}
@@ -53,23 +51,22 @@
   .count-badge{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;background:var(--ink-50);border:1px solid var(--line);border-radius:var(--radius-md);font-size:12px;color:var(--ink-500)}
   .count-badge strong{color:var(--ink-900);font-weight:600;font-variant-numeric:tabular-nums}
 
-  /* ============ Role Tabs ============ */
   .role-tabs{display:inline-flex;background:var(--ink-50);border:1px solid var(--line);border-radius:var(--radius-md);padding:3px;gap:2px;flex-wrap:wrap;max-width:60vw;overflow-x:auto}
-  .role-tab{padding:6px 12px;border:none;border-radius:var(--radius-sm);background:transparent;font:500:12px/1 var(--font-sans);color:var(--ink-500);cursor:pointer;transition:all 0.15s ease;white-space:nowrap}
+  .role-tab{padding:6px 12px;border:none;border-radius:var(--radius-sm);background:transparent;font:500 12px/1 var(--font-sans);color:var(--ink-500);cursor:pointer;transition:all 0.15s ease;white-space:nowrap}
   .role-tab:hover{color:var(--ink-700);background:var(--surface)}
   .role-tab.active{background:var(--surface);color:var(--ink-900);box-shadow:var(--shadow-sm)}
 
-  /* ============ Filter Bar ============ */
+  /* Filter Bar */
   .filter-bar{max-width:1480px;margin:0 auto;padding:16px 28px 0}
   .filter-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-lg);padding:14px 18px;box-shadow:var(--shadow-sm)}
   .field{display:flex;flex-direction:column;gap:6px;min-width:0}
   .field-label{font-size:10px;font-weight:600;color:var(--ink-400);text-transform:uppercase;letter-spacing:0.06em}
-  .field select,.field input{padding:8px 32px 8px 10px;border:1px solid var(--line);border-radius:var(--radius-md);background:var(--surface);color:var(--ink-800);font:500:12.5px/1.4 var(--font-sans);appearance:none;-webkit-appearance:none;cursor:pointer;width:100%;box-sizing:border-box}
-  .field select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23737373' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;padding-right:32px}
-  .field select:hover,.field input:hover{border-color-color:border-color:var(--line-strong)}
+  .field select,.field input{padding:8px 32px 8px 10px;border:1px solid var(--line);border-radius:var(--radius-md);background:var(--surface);color:var(--ink-800);font:500 12.5px/1.4 var(--font-sans);appearance:none;-webkit-appearance:none;cursor:pointer;width:100%;box-sizing:border-box}
+  .field select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23737373' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center}
+  .field select:hover,.field input:hover{border-color:var(--line-strong)}
   .field select:focus-visible,.field input:focus-visible{outline:none;border-color:var(--gold);box-shadow:var(--shadow-focus)}
 
-  /* ============ Legend ============ */
+  /* Legend */
   .legend-bar{max-width:1480px;margin:0 auto;padding:12px 28px 0}
   .legend-inner{display:flex;flex-wrap:wrap;align-items:center;gap:12px 28px;padding:12px 16px;background:var(--surface-2);border:1px solid var(--line-soft);border-radius:var(--radius-md)}
   .legend-group{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
@@ -84,19 +81,62 @@
   .legend-line.handoff{border-color:var(--path-handoff)}
   .legend-line.recovery{border-top-style:dotted;border-color:var(--path-recovery)}
 
-  /* ============ Content ============ */
+  /* Content */
   .content{max-width:1480px;margin:0 auto;padding:18px 28px 64px;flex:1;width:100%}
 
-  /* ============ Summary Bar ============ */
+  /* View Switch */
+  .view-switch-wrap{margin-bottom:16px;display:flex;justify-content:center}
+  .view-switch{display:inline-flex;background:var(--ink-50);border:1px solid var(--line);border-radius:var(--radius-md);padding:3px;gap:2px}
+  .view-btn{padding:7px 18px;border:none;border-radius:var(--radius-sm);background:transparent;font:500 12.5px/1 var(--font-sans);color:var(--ink-500);cursor:pointer;transition:all 0.15s ease;white-space:nowrap}
+  .view-btn small{display:block;font-size:9.5px;color:var(--ink-300);margin-top:2px;font-weight:400}
+  .view-btn:hover{color:var(--ink-700);background:var(--surface)}
+  .view-btn.active{background:var(--surface);color:var(--ink-900);box-shadow:var(--shadow-sm)}
+  .view-btn.active small{color:var(--ink-400)}
+
+  /* Overview (总览图) */
+  .overview-wrap{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-xl);box-shadow:var(--shadow-md);padding:28px 24px 20px;overflow-x:auto}
+  .overview{min-width:1320px;position:relative}
+  .ov-track{position:relative;display:grid;grid-template-columns:repeat(6,minmax(200px,1fr));gap:12px}
+  .ov-stage{position:relative;padding-top:8px;min-height:280px}
+  .ov-stage-head{position:sticky;top:0;background:var(--surface);padding:6px 8px 10px;text-align:center;border-bottom:1px solid var(--line-soft);z-index:2}
+  .ov-stage-num{display:inline-block;width:26px;height:26px;border-radius:50%;background:var(--ink-900);color:#fff;font-family:var(--font-mono);font-size:11px;font-weight:700;line-height:26px;text-align:center;margin-bottom:4px}
+  .ov-stage-name{font-size:12.5px;font-weight:600;color:var(--ink-900)}
+  .ov-stage-desc{font-size:10px;color:var(--ink-400);margin-top:2px;line-height:1.4}
+  .ov-lane{display:flex;flex-direction:column;gap:8px;padding-top:8px}
+  .ov-node{position:relative;border:1.5px solid var(--ink-200);border-left:4px solid var(--ink-400);border-radius:var(--radius-md);padding:7px 8px;background:var(--surface);font-size:11px;line-height:1.35;cursor:pointer;transition:all 0.15s cubic-bezier(0.4,0,0.2,1)}
+  .ov-node:hover{transform:translateX(2px);box-shadow:var(--shadow-md);border-color:var(--ink-400)}
+  .ov-node .ov-title{font-weight:600;color:var(--ink-900)}
+  .ov-node .ov-sub{color:var(--ink-500);font-size:10px;margin-top:2px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  .ov-node .ov-role{position:absolute;top:5px;right:6px;font-size:8.5px;font-weight:700;letter-spacing:0.3px;padding:1px 5px;border-radius:var(--radius-full);background:var(--ink-50);color:var(--ink-500)}
+  .ov-node.normal{border-left-color:var(--path-normal)}
+  .ov-node.alternative{border-left-color:var(--path-alternative);border-left-style:dashed}
+  .ov-node.exception{border-left-color:var(--path-exception);background:var(--gold-soft)}
+  .ov-node.failure{border-left-color:var(--path-failure);background:var(--bad-soft)}
+  .ov-node.handoff{border-left-color:var(--path-handoff);background:var(--accent-soft)}
+  .ov-node.recovery{border-left-color:var(--path-recovery);border-left-style:dotted}
+  /* 主路径节点高亮 */
+  .ov-node.normal{box-shadow:inset 0 0 0 1px var(--surface)}
+  .ov-lane .ov-node.normal{border-color:var(--ink-900)}
+  .ov-path-label{font-size:9px;font-weight:700;color:var(--ink-400);letter-spacing:0.4px;text-transform:uppercase;margin:2px 2px 0;display:flex;align-items:center;gap:4px}
+  .ov-path-label::after{content:"";flex:1;height:1px;background:var(--line);margin-left:4px}
+  .ov-legend{display:flex;flex-wrap:wrap;gap:10px 18px;justify-content:center;padding:14px 8px 4px;font-size:11px;color:var(--ink-600)}
+  .ov-legend-item{display:inline-flex;align-items:center;gap:5px}
+  .ov-legend-swatch{width:14px;height:10px;border-radius:3px;flex:none}
+  .ov-legend-swatch.normal{background:var(--surface);border:1px solid var(--ink-900);border-left:4px solid var(--path-normal)}
+  .ov-legend-swatch.exception{background:var(--gold-soft);border:1px solid var(--path-exception);border-left:4px solid var(--path-exception)}
+  .ov-legend-swatch.failure{background:var(--bad-soft);border:1px solid var(--path-failure);border-left:4px solid var(--path-failure)}
+  .ov-legend-swatch.handoff{background:var(--accent-soft);border:1px solid var(--path-handoff);border-left:4px solid var(--path-handoff)}
+  .ov-legend-swatch.recovery{background:var(--surface);border:1px dashed var(--path-recovery);border-left:4px solid var(--path-recovery);border-left-style:dotted}
+  .ov-legend-swatch.alternative{background:var(--surface);border:1px dashed var(--path-alternative);border-left:4px solid var(--path-alternative)}
+
   .summary-bar{background:var(--surface);border:1px solid var(--line);border-left:3px solid var(--gold);border-radius:var(--radius-lg);padding:14px 20px;margin-bottom:18px;font-size:13.5px;color:var(--ink-600);line-height:1.7}
   .summary-bar b{color:var(--ink-900)}
 
-  /* ============ Goal Bar ============ */
   .goal-bar{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-lg);padding:14px 20px;margin-bottom:18px;font-size:13px;color:var(--ink-600)}
   .goal-bar b{color:var(--ink-900);font-weight:700}
   .goal-bar .role-tag{display:inline-block;padding:2px 8px;border-radius:var(--radius-sm);background:var(--accent-soft);color:var(--accent);font-weight:600;font-size:11px;margin-right:6px}
 
-  /* ============ FLOW CANVAS (核心：节点 + 边) ============ */
+  /* Flow Canvas */
   .flow-section{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-xl);box-shadow:var(--shadow-md);padding:32px 28px 28px;margin-bottom:18px}
   .flow-header{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:18px;padding-bottom:14px;border-bottom:2px solid var(--ink-900);flex-wrap:wrap}
   .flow-title{display:flex;align-items:center;gap:14px;min-width:0;flex:1}
@@ -104,34 +144,36 @@
   .flow-stage-info h3{font-size:16px;font-weight:600;color:var(--ink-900);margin:0}
   .flow-stage-info .stage-desc{font-size:12px;color:var(--ink-400);margin-top:2px}
   .flow-actions{display:flex;gap:8px;align-items:center}
-  .flow-action{padding:6px 14px;border:1px solid var(--line);border-radius:var(--radius-md);background:var(--surface);font:500:11.5px var(--font-sans);color:var(--ink-600);cursor:pointer;transition:all 0.15s ease}
+  .flow-action{padding:6px 14px;border:1px solid var(--line);border-radius:var(--radius-md);background:var(--surface);font:500 11.5px var(--font-sans);color:var(--ink-600);cursor:pointer;transition:all 0.15s ease}
   .flow-action:hover{color:var(--ink-900);border-color:var(--ink-300)}
   .flow-action.active{background:var(--ink-900);color:#fff;border-color:var(--ink-900)}
 
-  .flow-canvas{position:relative;display:flex;flex-wrap:wrap;gap:14px;align-items:flex-start}
-  .flow-canvas::before{content:"";position:absolute;left:0;right:0;top:14px;height:2px;background:var(--line-soft);z-index:0}
-  .flow-node{position:relative;z-index:1;min-width:148px;max-width:200px;background:var(--surface);border:2px solid var(--ink-300);border-radius:var(--radius-lg);padding:10px 12px;cursor:pointer;transition:all 0.2s cubic-bezier(0.4,0,0.2,1);box-shadow:var(--shadow-sm)}
+  /* Flow canvas 内的"图"布局：：每阶段一行，横向排列 */
+  .flow-canvas{position:relative;display:flex;flex-wrap:wrap;gap:14px;align-items:flex-start;padding-top:10px}
+  .flow-canvas::before{content:"";position:absolute;left:0;right:0;top:24px;height:2px;background:linear-gradient(90deg,var(--line) 0%,var(--line) 90%,transparent 100%);z-index:0;border-radius:1px}
+
+  .flow-node{position:relative;z-index:1;min-width:160px;max-width:210px;background:var(--surface);border:2px solid var(--ink-300);border-radius:var(--radius-lg);padding:14px 12px 12px;cursor:pointer;transition:all 0.2s cubic-bezier(0.4,0,0.2,1);box-shadow:var(--shadow-sm)}
   .flow-node:hover{transform:translateY(-2px);box-shadow:var(--shadow-md);border-color:var(--ink-700)}
   .flow-node.expanded{background:var(--gold-soft);border-color:var(--gold);box-shadow:var(--shadow-lg);transform:translateY(-2px)}
-  .flow-node.start{border-radius:var(--radius-full);border-color:var(--ink-900);background:var(--ink-900);color:#fff}
+  .flow-node.start{border-radius:var(--radius-full);border-color:var(--ink-900);background:var(--ink-900);color:#fff;text-align:center;min-width:120px;padding:14px 18px}
   .flow-node.start .flow-node-title{color:#fff}
   .flow-node.start .flow-node-meta{color:rgba(255,255,255,0.7)}
-  .flow-node.end{border-radius:var(--radius-full);border-color:var(--good);background:var(--good-soft);color:var(--good)}
-  .flow-node.decision{border-radius:0;transform:rotate(45deg);min-width:120px;min-height:120px;display:flex;align-items:center;justify-content:center;text-align:center}
+  .flow-node.start .flow-node-path{background:#fff;color:var(--ink-900);border-color:#fff}
+  .flow-node.end{border-radius:var(--radius-full);border-color:var(--good);background:var(--good-soft);color:var(--good);text-align:center;min-width:120px;padding:14px 18px}
+  .flow-node.end .flow-node-title{color:var(--good)}
+  .flow-node.decision{transform:rotate(45deg);min-width:130px;min-height:130px;display:flex;align-items:center;justify-content:center;text-align:center;border-width:3px}
   .flow-node.decision>*{transform:rotate(-45deg)}
   .flow-node.decision .flow-node-title{font-weight:700}
   .flow-node.exception{border-color:var(--path-exception);background:var(--gold-soft)}
   .flow-node.failure{border-color:var(--path-failure);background:var(--bad-soft)}
   .flow-node.handoff{border-color:var(--path-handoff);background:var(--accent-soft)}
-  .flow-node.recovery{border-color:var(--path-recovery);border-style:dotted;background:var(--surface);opacity:0.85}
+  .flow-node.recovery{border-color:var(--path-recovery);border-style:dotted;background:var(--surface);opacity:0.9}
   .flow-node.alternative{border-color:var(--path-alternative);border-style:dashed}
-  .flow-node[data-filter-hidden="true"]{display:none}
 
   .flow-node-title{font-size:12.5px;font-weight:600;line-height:1.35;color:var(--ink-900);margin-bottom:3px;word-break:keep-all}
   .flow-node-meta{font-size:10.5px;color:var(--ink-500);line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 
-  /* path type mini tag on node */
-  .flow-node-path{position:absolute;top:-7px;right:-7px;padding:2px 6px;border-radius:var(--radius-full);font-size:9px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;background:var(--surface);border:1px solid var(--line);color:var(--ink-600);box-shadow:var(--shadow-sm)}
+  .flow-node-path{position:absolute;top:-8px;right:-8px;padding:2px 7px;border-radius:var(--radius-full);font-size:9px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;background:var(--surface);border:1px solid var(--line);color:var(--ink-600);box-shadow:var(--shadow-sm);white-space:nowrap}
   .flow-node-path.normal{background:var(--ink-900);color:#fff;border-color:var(--ink-900)}
   .flow-node-path.exception{background:var(--path-exception);color:#fff;border-color:var(--path-exception)}
   .flow-node-path.failure{background:var(--path-failure);color:#fff;border-color:var(--path-failure)}
@@ -139,13 +181,15 @@
   .flow-node-path.recovery{background:var(--path-recovery);color:var(--ink-900);border-color:var(--path-recovery)}
   .flow-node-path.alternative{background:var(--surface);color:var(--path-alternative);border-color:var(--path-alternative);border-style:dashed}
 
-  /* status badge bottom */
-  .flow-node-status{position:absolute;bottom:-6px;left:10px;padding:1px 5px;border-radius:var(--radius-sm);font-size:8.5px;font-weight:600;letter-spacing:0.4px;background:var(--surface);border:1px solid var(--line);color:var(--ink-500)}
-  .flow-node-status.FACT{color:var(--fact);border-color:var(--ink-300)}
-  .flow-node-status.AI_INFERENCE{color:var(--inference);border-color:var(--inference-bg);background:var(--inference-bg)}
+  .flow-node-status{position:absolute;bottom:-7px;left:10px;padding:1px 6px;border-radius:var(--radius-sm);font-size:8.5px;font-weight:600;letter-spacing:0.4px;background:var(--surface);border:1px solid var(--line);color:var(--ink-500);box-shadow:var(--shadow-sm)}
+  .flow-node-status.FACT{color:var(--fact);border-color:var(--ink-300);background:var(--surface)}
+  .flow-node-status.AI_INFERENCE{color:var(--inference);border-color:var(--inference);background:var(--inference-bg)}
   .flow-node-status.UNKNOWN{color:var(--unknown);border-color:var(--unknown);background:var(--unknown-bg)}
 
-  /* ============ Expanded Detail (popover) ============ */
+  /* 流程图连接器（阶段内节点之间的小箭头） */
+  .flow-arrow{position:absolute;z-index:0;color:var(--ink-300);font-size:14px;line-height:1;user-select:none}
+
+  /* Detail Overlay */
   .flow-detail-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.32);z-index:200;display:none;align-items:center;justify-content:center;padding:24px}
   .flow-detail-overlay.show{display:flex}
   .flow-detail{background:var(--surface);border-radius:var(--radius-xl);box-shadow:var(--shadow-lg);max-width:560px;width:100%;max-height:80vh;overflow:hidden;display:flex;flex-direction:column}
@@ -177,16 +221,13 @@
   .flow-detail-grid dd{font-size:13px;color:var(--ink-700);line-height:1.6;overflow-wrap:anywhere}
   .evidence-text{font-family:var(--font-mono);font-size:11px;color:var(--ink-500);background:var(--ink-50);padding:6px 10px;border-radius:var(--radius-sm);border-left:2px solid var(--gold);line-height:1.5;display:inline-block;word-break:break-all}
 
-  /* ============ Empty State ============ */
   .empty-state{padding:48px 20px;text-align:center;color:var(--ink-400);font-size:13.5px;background:var(--surface);border:1px dashed var(--line);border-radius:var(--radius-lg)}
 
-  /* ============ Source Note ============ */
   .source-note{margin-top:18px;padding:14px 18px;background:var(--surface);border:1px solid var(--line);border-left:3px solid var(--gold);border-radius:var(--radius-md);font-size:12px;color:var(--ink-500);line-height:1.7}
   .source-note strong{color:var(--ink-800)}
 
   footer{max-width:1480px;margin:0 auto;padding:0 28px 40px;color:var(--ink-400);font-size:12px}
 
-  /* ============ Responsive ============ */
   @media(max-width:1024px){
     .topbar-inner{padding:12px 18px;flex-wrap:wrap;gap:12px}
     .filter-bar,.legend-bar,.content,footer{padding-left:18px;padding-right:18px}
@@ -200,9 +241,10 @@
     .flow-canvas{flex-direction:column;align-items:stretch}
     .flow-canvas::before{display:none}
     .flow-node{max-width:100%}
+    .flow-node.decision{transform:none;min-height:0;min-width:0;padding:12px}
+    .flow-node.decision>*{transform:none}
   }
 
-  /* ============ Reduced Motion ============ */
   @media(prefers-reduced-motion:no-preference){
     .flow-node{animation:flow-fade 0.3s cubic-bezier(0.4,0,0.2,1)}
     @keyframes flow-fade{
@@ -218,9 +260,9 @@
   <header class="topbar">
     <div class="topbar-inner">
       <div class="brand">
-        <div class="brand-mark" id="brandMark">U</div>
+        <div class="brand-mark" id="brandMark">C</div>
         <div class="brand-text">
-          <div class="brand-title" id="brandTitle">用户旅程 · 流程图画板</div>
+          <div class="brand-title" id="brandTitle">CHANEL FSN · RSVP</div>
           <div class="brand-sub" id="brandSub">User Journey · Flow Board v1.5</div>
         </div>
       </div>
@@ -257,10 +299,11 @@
       <div class="legend-group">
         <span class="legend-group-label">节点类型</span>
         <span class="legend-item"><span class="legend-dot" style="background:var(--ink-900);border-radius:50%"></span>起点</span>
-        <span class="legend-item"><span class="legend-dot" style="background:var(--good)"></span>终点</span>
-        <span class="legend-item"><span class="legend-dot" style="background:var(--gold-soft);border:2px solid var(--gold);transform:rotate(45deg)"></span>决策</span>
+        <span class="legend-item"><span class="legend-dot" style="background:var(--good-soft);border:2px solid var(--good);border-radius:50%"></span>终点</span>
+        <span class="legend-item"><span class="legend-dot" style="background:var(--surface);border:2px solid var(--gold);transform:rotate(45deg)"></span>决策</span>
         <span class="legend-item"><span class="legend-dot" style="background:var(--bad-soft);border:2px solid var(--bad)"></span>失败</span>
         <span class="legend-item"><span class="legend-dot" style="background:var(--accent-soft);border:2px solid var(--accent)"></span>交接</span>
+        <span class="legend-item"><span class="legend-dot" style="background:var(--surface);border:2px dotted var(--path-recovery)"></span>恢复</span>
       </div>
       <div class="legend-group">
         <span class="legend-group-label">路径类型</span>
@@ -274,19 +317,27 @@
       <div class="legend-group">
         <span class="legend-group-label">知识状态</span>
         <span class="legend-item"><span class="tag status-FACT" style="font-size:9.5px">FACT</span>材料明确</span>
-        <span class="legend-item"><span class="tag status-AI_INFERENCE" style="font-size:9.5px">AI_INF</span>推断</span>
+        <span class="legend-item"><span class="tag status-AI_INFERENCE" style="font-size:9.5px">AI</span>推断</span>
         <span class="legend-item"><span class="tag status-UNKNOWN" style="font-size:9.5px">UNK</span>未知</span>
       </div>
     </div>
   </div>
 
   <main class="content">
-    <div class="summary-bar" id="summaryBar">
+    <div class="view-switch-wrap">
+      <div class="view-switch" role="tablist" aria-label="视图切换">
+        <button class="view-btn active" data-view="overview" role="tab" aria-selected="true">总览图<small>整条旅程一图</small></button>
+        <button class="view-btn" data-view="flow" role="tab" aria-selected="false">节点详情<small>分阶段查看</small></button>
+      </div>
+    </div>
+
+    <div class="summary-bar">
       <b>一句话旅程叙事</b> — <span id="summaryText"></span>
     </div>
 
     <div class="goal-bar" id="goalBar"></div>
 
+    <div id="overviewContainer"></div>
     <div id="flowContainer"></div>
 
     <div class="empty-state" id="emptyState" hidden>
@@ -295,14 +346,13 @@
 
     <div class="source-note">
       <strong>材料来源与边界</strong><br>
-      本流程图画板严格基于本任务指定的原始材料，所有事实（FACT）可追溯到原文，AI 推断和未知项已显式标注。HTML 仅用于人审浏览与筛选，**不是页面原型或业务决定**。
+      本流程图画板基于 2 份核心原材料：<b>RSVP AS-IS 梳理</b>（飞书 doc）与 <b>FSN RSVP 运营文档</b>（飞书 doc）。其中 AS-IS 梳理说明"这个系统是什么"，运营文档说明"它长期怎么运营"，两者共同构成本为旅程的事实输入。所有事实（FACT）均可追溯到原文；AI 推断（AI_INFERENCE）和未知（UNKNOWN）均已显式标注。HTML 仅用于人审浏览和筛选，不是页面原型或业务决定。
     </div>
   </main>
 
-  <footer>只读画板 · v1.5 流程图模板 · 单文件零依赖 · 支持 URL 参数 ?role=&amp&stage=&amp&path= 直达</footer>
+  <footer>只读画板 · v1.6 总览+流程图模板 · 单文件零依赖 · 支持 URL 参数 ?role=&amp&stage=&amp&path= 直达</footer>
 </div>
 
-<!-- 节点详情弹窗 -->
 <div class="flow-detail-overlay" id="detailOverlay" role="dialog" aria-modal="true" aria-labelledby="detailTitle">
   <div class="flow-detail" id="detailContent">
     <div class="flow-detail-head">
@@ -317,35 +367,86 @@
 </div>
 
 <script>
-/* =============================================================
-   用户旅程流程图画板 v1.5
-   ------------------------------------------------------------
-   使用方式：
-   1. 在 JOURNEY 填入数据
-   2. 浏览器打开即可看到流程图
-   3. 点击节点 → 弹窗查看详情
-   ============================================================= */
-
 const JOURNEY = {
   meta: {
     brand: "U",
-    title: "用户旅程 · 流程图画板",
-    subtitle: "User Journey · Flow Board v1.5",
+    title: "用户旅程 · 总览+流程图画板",
+    subtitle: "User Journey · Overview + Flow Board v1.6",
     summary: "（在此填入一句话旅程叙事）"
   },
   stages: [
-    /* 阶段定义 · name=阶段名 · desc=简短说明 */
+    { name: "S1 邀请分发", desc: "FA 通过邮件/微信发送邀请函或邀请码" },
+    { name: "S2 扫码进入", desc: "客户微信扫码，关注/打开服务号，收到推送" },
+    { name: "S3 注册登记", desc: "未注册填手机号；已注册直接进入；特殊活动个人信息确认" },
+    { name: "S4 场次预约", desc: "选择场次（By day/session）+ 携伴人数" },
+    { name: "S5 现场核销", desc: "活动当天客户微信扫码核销入场" },
+    { name: "S6 TKU", desc: "活动结束 D+1 推送感谢推文" }
   ],
-  pathLabels: { normal:"主路径", alternative:"备选", exception:"异常", failure:"失败", handoff:"交接", recovery:"恢复" },
+  pathLabels: { normal: "主路径", alternative: "备选", exception: "异常", failure: "失败", handoff: "交接", recovery: "恢复" },
   roles: [
-    /* 角色定义 */
+    { id: "guest", name: "主客（VIP 客户）", short: "客" },
+    { id: "plus", name: "携伴（Plus one）", short: "伴" },
+    { id: "fa", name: "FA（精品顾问）", short: "FA" },
+    { id: "cce", name: "CCE（开发运维）", short: "CCE" },
+    { id: "mins", name: "Minutes（场次配置）", short: "Min" },
+    { id: "biz", name: "业务侧（Apple/Andie）", short: "BIZ" }
   ],
   nodes: [
-    /* 节点定义 · type 可选: 'normal' | 'start' | 'end' | 'decision' | 'exception' | 'failure' | 'handoff' | 'recovery' | 'alternative' */
+    /* ============ S1 邀请分发 ============ */
+    { id:"g-s1-1", role:"guest", stage:0, path:"normal", status:"FACT", type:"start", title:"收到 FA 的邀请函", desc:"FA 通过邮件/微信发送邀请码", behavior: "查看邀请函，准备扫码", touchpoint: "邮件/微信（服务号外）", result: "获得入口", evidence:"FACT · rsvp-as-is.md L31-L41" },
+    { id:"fa-s1-1", role:"fa", stage:0, path:"handoff", status:"FACT", type:"handoff", title:"发送邀请码/邀请函", desc:"FA 在销售仪式或活动前分发", behavior: "发送邀请码/邀请函", touchpoint: "邮件/微信", result: "客户收到邀请", evidence:"FACT · rsvp-as-is.md L31-L33" },
+    { id:"fa-s1-2", role:"fa", stage:0, path:"normal", status:"FACT", title:"按命名规则制作 E-invitation", desc:"25S EP BJ 0220 / By Session 含时段", behavior: "按 Recap + Sketch 配置", touchpoint: "Sketch template + Figma KV", result: "邀请函就绪", evidence:"FACT · rsvp-ops.md L91-L92" },
+    { id:"m-s1-0", role:"mins", stage:0, path:"handoff", status:"FACT", type:"handoff", title:"按 Recap 配置场次数据", desc:"提供接口给 CCE 后端", behavior: "按 Recap 配置场次", touchpoint: "Minutes Portal", result: "场次数据就绪", evidence:"FACT · rsvp-ops.md L61-L62" },
+    { id:"b-s1-0", role:"biz", stage:0, path:"handoff", status:"FACT", type:"handoff", title:"提供 Brief 与 Recap", desc:"业务方提供活动需求与场次文案", behavior: "提供 Recap 表 + Figma", touchpoint: "Recap 表 + Figma", result: "CCE 据此配置", evidence:"FACT · rsvp-ops.md L62" },
+
+    /* ============ S2 扫码进入 ============ */
+    { id:"g-s2-1", role:"guest", stage:1, path:"normal", status:"FACT", title:"微信扫码关注服务号", desc:"客人微信扫码，关注/打开 CHANEL 服务号", behavior: "扫码 → 关注 → 收到推送", touchpoint: "微信扫码、服务号推送", result: "进入活动详情页", evidence:"FACT · rsvp-as-is.md L31-L41" },
+    { id:"g-s2-2", role:"guest", stage:1, path:"exception", status:"AI_INFERENCE", title:"扫码加载慢（待优化）", desc:"H5 改 MP 后可能有启动速度与跨服务号跳转体验", behavior: "等待过渡页/小程序启动", touchpoint: "服务号跳转、浏览器过渡页", result: "可能困惑或流失", evidence:"AI_INFERENCE · rsvp-ops L25-L36" },
+    { id:"p-s1-1", role:"plus", stage:1, path:"normal", status:"FACT", title:"收到主客的携伴分享链接", desc:"由主客邀请的同行朋友", behavior: "查看微信聊天分享", touchpoint: "微信聊天、微信好友卡片", result: "待注册", evidence:"FACT · rsvp-as-is.md L122-L125" },
+
+    /* ============ S3 注册登记 ============ */
+    { id:"g-s3-1", role:"guest", stage:2, path:"normal", status:"FACT", title:"已注册 → 直接进入预约页", desc:"已注册客户跳过手机号注册", behavior: "系统识别手机号已注册", touchpoint: "服务号识别", result: "进入场次选择", evidence:"FACT · rsvp-as-is.md L97-L101" },
+    { id:"g-s3-2", role:"guest", stage:2, path:"alternative", status:"FACT", title:"未注册 → 填手机号注册", desc:"未注册客户需要完成手机号验证", behavior: "输入手机号 → 验证码 → 提交", touchpoint: "注册页面", result: "注册成功，进入预约", evidence:"FACT · rsvp-as-is.md L97-L101" },
+    { id:"g-s3-3", role:"guest", stage:2, path:"alternative", status:"FACT", title:"特殊活动 → 个人信息确认弹窗", desc:"Show & Party / All-in 等特殊活动", behavior: "查看个人信息 → 确认或修改", touchpoint: "个人信息确认弹窗", result: "信息确认通过", evidence:"FACT · rsvp-as-is.md L73-L83" },
+    { id:"g-s3-4", role:"guest", stage:2, path:"failure", status:"FACT", type:"failure", title:"手机号不在白名单", desc:"客户手机号未在 Minutes 维护的白名单中", behavior: "弹窗提示联系 FA", touchpoint: "alerts_common.phone 弹窗", result: "需联系 FA 开通白名单", evidence:"FACT · rsvp-as-is.md L138-L143" },
+    { id:"p-s2-1", role:"plus", stage:2, path:"normal", status:"FACT", title:"点击携伴链接进入邀请页", desc:"携伴独立的邀请页面（带主客姓名）", behavior: "查看活动信息", touchpoint: "携伴邀请页", result: "进入注册/预约", evidence:"FACT · rsvp-as-is.md L97-L101" },
+    { id:"p-s3-1", role:"plus", stage:2, path:"alternative", status:"FACT", title:"未注册需手机号注册", desc:"携伴若未注册需先完成注册", behavior: "输入手机号 → 验证码 → 提交", touchpoint: "注册页面", result: "注册成功", evidence:"FACT · rsvp-as-is.md L97-L101" },
+    { id:"m-s3-0", role:"mins", stage:2, path:"normal", status:"FACT", title:"维护白名单（手机号）", desc:"白名单增删权限收归 Minutes，CCE 不操作", behavior: "白名单增删改查", touchpoint: "Minutes Portal", result: "白名单准确", evidence:"FACT · rsvp-ops.md L144-L149" },
+    { id:"fa-s3-1", role:"fa", stage:2, path:"handoff", status:"FACT", title:"答疑白名单/链接失效问题", desc:"客户异常后，FA 提供解决方案", behavior: "微信/电话联系客户", touchpoint: "微信、电话、精品店", result: "客户得到解决", evidence:"FACT · rsvp-as-is.md L128-L160" },
+
+    /* ============ S4 场次预约 ============ */
+    { id:"g-s4-1", role:"guest", stage:3, path:"normal", status:"FACT", title:"选择活动场次", desc:"By day 直接展示；By session 场次选择器（>8 场按日期 Tab）", behavior: "选择场次", touchpoint: "场次选择组件", result: "场次确定", evidence:"FACT · rsvp-ops L92" },
+    { id:"g-s4-2", role:"guest", stage:3, path:"normal", status:"FACT", title:"设置携伴人数", desc:"默认 0，最多 1 位", behavior: "+/- 选择携伴人数", touchpoint: "携伴人数选择组件", result: "携伴人数确定", evidence:"FACT · rsvp-ops L92" },
+    { id:"g-s4-3", role:"guest", stage:3, path:"handoff", status:"FACT", type:"handoff", title:"生成携伴分享链接", desc:"提交后生成携伴专属分享链接", behavior: "复制/转发携伴链接给好友", touchpoint: "携伴分享页 / 微信好友选择器", result: "好友可独立注册预约", evidence:"FACT · rsvp-as-is.md L122-L125" },
+    { id:"g-s4-4", role:"guest", stage:3, path:"normal", status:"FACT", title:"收到预约成功模板消息", desc:"活动名称/地点/时间", behavior: "查看推送内容", touchpoint: "服务号模板消息", result: "预约成功确认", evidence:"FACT · rsvp-ops L142-L143" },
+    { id:"g-s4-5", role:"guest", stage:3, path:"exception", status:"FACT", type:"exception", title:"场次已满", desc:"选择的场次名额已满", behavior: "弹窗提示选择其他场次/联系 FA", touchpoint: "alerts_common.full/fullFixed 弹窗", result: "选择其他场次或联系 FA", evidence:"FACT · rsvp-as-is.md L131-L135" },
+    { id:"g-s4-6", role:"guest", stage:3, path:"exception", status:"FACT", title:"重复预约", desc:"已预约过该活动", behavior: "弹窗提示无需重复", touchpoint: "alerts_common.registered 弹窗", result: "回到已预约结果页", evidence:"FACT · rsvp-as-is.md L146-L148" },
+    { id:"g-s4-7", role:"guest", stage:3, path:"exception", status:"FACT", title:"场次时间已过", desc:"提交预约时场次时间已过", behavior: "弹窗提示联系 FA", touchpoint: "场次已结束弹窗", result: "联系 FA", evidence:"FACT · rsvp-ops L157" },
+    { id:"g-s4-8", role:"guest", stage:3, path:"recovery", status:"FACT", type:"recovery", title:"后台取消后后重新预约", desc:"主客被后台取消后，可以再次重新预约", behavior: "重新进入预约流程", touchpoint: "预约页", result: "成功重新预约", evidence:"FACT · rsvp-ops Issue #11" },
+    { id:"p-s4-1", role:"plus", stage:3, path:"normal", status:"FACT", title:"选择场次预约", desc:"独立场次（名额占用主客预约）", behavior: "选择场次 → 提交", touchpoint: "携伴预约页", result: "预约成功", evidence:"FACT · rsvp-as-is.md L122-L125" },
+    { id:"p-s4-2", role:"plus", stage:3, path:"exception", status:"FACT", title:"携伴链接已被 +1 注册", desc:"携伴链接已被他人注册", behavior: "弹窗提示链接失效", touchpoint: "alerts_common.beused 弹窗", result: "联系主客重新邀请", evidence:"FACT · rsvp-ops L131" },
+    { id:"p-s4-3", role:"plus", stage:3, path:"failure", status:"FACT", type:"failure", title:"主客被取消资格", desc:"主客预约被后台取消", behavior: "携伴链接失效", touchpoint: "alerts_common 弹窗", result: "联系 FA", evidence:"FACT · rsvp-ops L131" },
+    { id:"m-s4-0", role:"mins", stage:3, path:"normal", status:"FACT", title:"新增场次时间判断", desc:"场次已过则拒绝提交", behavior: "提交预约时场次时间判断", touchpoint: "接口", result: "避免过期场次被预约", evidence:"FACT · rsvp-ops L157" },
+    { id:"cce-s4-0", role:"cce", stage:3, path:"normal", status:"FACT", title:"配置模板消息", desc:"地址/时间/活动名称推送", behavior: "配置模板消息字段", touchpoint: "模板消息配置", result: "客户收到正确的模板消息", evidence:"FACT · rsvp-ops L142-L143" },
+    { id:"cce-s4-1", role:"cce", stage:3, path:"handoff", status:"FACT", title:"UAT 协商与执行", desc:"与 AD/Minutes 协商时间，发出预告", behavior: "UAT 群 + 邮件", touchpoint: "UAT 群/邮件", result: "UAT 通过", evidence:"FACT · rsvp-ops L62-L65" },
+    { id:"cce-s4-2", role:"cce", stage:3, path:"normal", status:"FACT", title:"按城市分批 Go-Live", desc:"11 个城市门店活动按计划上线", behavior: "配置发布", touchpoint: "配置发布", result: "活动上线", evidence:"FACT · rsvp-as-is L84-L86" },
+    { id:"fa-s4-1", role:"fa", stage:3, path:"handoff", status:"FACT", title:"答疑客户关于预约的疑问", desc:"客户可能对场次/携伴有疑问", behavior: "微信/电话答疑", touchpoint: "微信、电话", result: "客户理解活动", evidence:"FACT · rsvp-ops L131" },
+    { id:"b-s4-0", role:"biz", stage:3, path:"handoff", status:"FACT", title:"确认活动文案", desc:"业务确认每个活动的文案细节", behavior: "邮件/群确认", touchpoint: "邮件/群", result: "文案最终版", evidence:"FACT · rsvp-ops L91-L92" },
+    { id:"b-s4-1", role:"biz", stage:3, path:"handoff", status:"FACT", title:"决策 H5 → 小程序 10 个议题", desc:"产品+业务+技术共同决策迁移方向", behavior: "Kick-off + 群讨论", touchpoint: "Kick-off + 群", result: "10 个议题决策", evidence:"FACT · rsvp-ops L25-L36" },
+
+    /* ============ S5 现场核销 ============ */
+    { id:"g-s5-1", role:"guest", stage:4, path:"normal", status:"FACT", title:"活动现场扫码核销", desc:"活动当天客户用微信扫码进入服务号", behavior: "扫码 → 验证 → 入场", touchpoint: "服务号核销页", result: "入场成功", evidence:"FACT · rsvp-as-is.md L39-L41" },
+    { id:"g-s5-2", role:"guest", stage:4, path:"failure", status:"FACT", type:"failure", title:"服务器/网络繁忙", desc:"服务器崩溃、二维码未刷新等", behavior: "弹窗提示重试或联系现场", touchpoint: "alerts_common.network 弹窗", result: "重试或联系现场", evidence:"FACT · rsvp-as-is.md L151-L153" },
+    { id:"p-s5-1", role:"plus", stage:4, path:"normal", status:"FACT", title:"活动当天扫码核销", desc:"携伴与主客同步入场", behavior: "扫码 → 验证 → 入场", touchpoint: "服务号核销页", result: "入场成功", evidence:"FACT · rsvp-as-is.md L39-L41" },
+
+    /* ============ S6 TKU ============ */
+    { id:"g-s6-1", role:"guest", stage:5, path:"normal", status:"FACT", type:"end", title:"活动结束 D+1 收到 TKU", desc:"活动结束次日（D+1），微信后台推送感谢推文", behavior: "查看 TKU 推文", touchpoint: "服务号推文", result: "收到品牌感谢", evidence:"FACT · rsvp-ops L154-L156" },
+    { id:"g-s6-2", role:"guest", stage:5, path:"normal", status:"FACT", title:"我的活动中心按状态跳转", desc:"未开始跳转预约结果；已结束跳转 TKU 或弹窗", behavior: "点击「我的活动」", touchpoint: "服务号「我的活动」菜单", result: "按状态跳转", evidence:"FACT · rsvp-ops L155-L157" },
+    { id:"p-s6-1", role:"plus", stage:5, path:"normal", status:"FACT", title:"活动结束收到 TKU", desc:"携伴同步收到感谢推文", behavior: "查看 TKU 推文", touchpoint: "服务号推文", result: "收到品牌感谢", evidence:"FACT · rsvp-ops L154-L156" },
+    { id:"cce-s6-0", role:"cce", stage:5, path:"normal", status:"FACT", title:"配置 D+1 TKU 永链", desc:"PV/UE 需按单日 D+1 替换", behavior: "配置 TKU 永链或模板消息", touchpoint: "我的活动中心", result: "客户按预期收到 TKU", evidence:"FACT · rsvp-ops L154-L156" }
   ]
 };
 
-/* ====================== State ====================== */
 const $=id=>document.getElementById(id);
 const params=new URLSearchParams(location.search);
 const state={
@@ -356,7 +457,6 @@ const state={
   search:params.get("q")||""
 };
 
-/* ====================== Init Meta ====================== */
 function initMeta(){
   if(JOURNEY.meta.brand) $("brandMark").textContent=JOURNEY.meta.brand;
   if(JOURNEY.meta.title) $("brandTitle").textContent=JOURNEY.meta.title;
@@ -364,13 +464,11 @@ function initMeta(){
   if(JOURNEY.meta.summary) $("summaryText").textContent=JOURNEY.meta.summary;
 }
 
-/* ====================== Init Role Tabs ====================== */
 function initRoleTabs(){
   const bar=$("roleTabs");
   // 综合视角
   const allBtn=document.createElement("button");
   allBtn.className="role-tab active";
-  data-role="";
   allBtn.dataset.role="";
   allBtn.textContent="综合视角";
   bar.appendChild(allBtn);
@@ -385,12 +483,11 @@ function initRoleTabs(){
   bar.addEventListener("click",e=>{
     const btn=e.target.closest(".role-tab");
     if(!btn) return;
-    bar.querySelectorAll(".role-tab").forEach(x=>x.classList.toggle("active",x===));
+    bar.querySelectorAll(".role-tab").forEach(x=>x.classList.toggle("active",x===btn));
     state.role=btn.dataset.role;
     syncURL();
     render();
   });
-  // 恢复 URL
   if(state.role){
     const btn=bar.querySelector(`.role-tab[data-role="${state.role}"]`);
     if(btn) btn.classList.add("active");
@@ -398,7 +495,6 @@ function initRoleTabs(){
   }
 }
 
-/* ====================== Init Filters ====================== */
 function initFilters(){
   const stageSel=$("stageFilter");
   JOURNEY.stages.forEach((s,i)=>{
@@ -441,7 +537,6 @@ function initFilters(){
   });
 }
 
-/* ====================== URL Sync ====================== */
 function syncURL(){
   const q=new URLSearchParams();
   if(state.role) q.set("role",state.role);
@@ -449,10 +544,10 @@ function syncURL(){
   if(state.path) q.set("path",state.path);
   if(state.status) q.set("status",state.status);
   if(state.search) q.set("q",state.search);
-  history.replaceState(null,"",`${location.pathname}${q.toString()?"? "+q:""}${location.hash}`);
+  if(currentView && currentView!=="overview") q.set("view",currentView);
+  history.replaceState(null,"",`${location.pathname}${q.toString()?"?"+q:""}${location.hash}`);
 }
 
-/* ====================== Filter ====================== */
 function filtered(){
   const kw=state.search.trim().toLowerCase();
   return JOURNEY.nodes.filter(n=>{
@@ -468,7 +563,6 @@ function filtered(){
   });
 }
 
-/* ====================== Detail Modal ====================== */
 function openDetail(node){
   $("detailTitle").textContent=node.title || "(无标题)";
   $("detailTags").innerHTML=`
@@ -480,7 +574,7 @@ function openDetail(node){
     ${node.desc?`<div class="flow-detail-section"><div class="flow-detail-label">描述</div><div class="flow-detail-text">${esc(node.desc)}</div></div>`:""}
     <dl class="flow-detail-grid">
       ${node.role?`<dt>角色</dt><dd>${esc(roleName(node.role))}</dd>`:""}
-      ${node.stage?`<dt>阶段</dt><dd>${esc(stageName(node.stage))}</dd>`:""}
+      ${node.stage!==undefined?`<dt>阶段</dt><dd>${esc(stageName(node.stage))}</dd>`:""}
       ${node.behavior?`<dt>行为</dt><dd>${esc(node.behavior)}</dd>`:""}
       ${node.touchpoint?`<dt>触点</dt><dd>${esc(node.touchpoint)}</dd>`:""}
       ${node.result?`<dt>结果</dt><dd>${esc(node.result)}</dd>`:""}
@@ -494,7 +588,7 @@ function closeDetail(){
 }
 function roleName(id){
   const r=JOURNEY.roles.find(x=>x.id===id);
-  return r?r.name:id;
+  return r?r.name:id||"—";
 }
 function stageName(id){
   const s=JOURNEY.stages[id];
@@ -502,12 +596,10 @@ function stageName(id){
 }
 function esc(s){return String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[c]))}
 
-/* ====================== Render ====================== */
 function render(){
   const list=filtered();
-  $("countText").textContent=list.length+" / / "+JOURNEY.nodes.length;
+  $("countText").textContent=list.length+" / "+JOURNEY.nodes.length;
 
-  // 目标栏
   const currentRole=state.role?JOURNEY.roles.find(r=>r.id===state.role):null;
   const goalBar=$("goalBar");
   if(currentRole){
@@ -525,7 +617,10 @@ function render(){
   }
   $("emptyState").hidden=true;
 
-  // 按阶段分组
+  // ===== 总览图（横向总图）=====
+  renderOverview(list);
+
+  // ===== 节点详情视图 =====
   const groups={};
   JOURNEY.stages.forEach((s,i)=>groups[i]={...s,nodes:[]});
   list.forEach(n=>{ if(groups[n.stage]) groups[n.stage].nodes.push(n); });
@@ -550,7 +645,7 @@ function render(){
         </div>
         <div class="flow-canvas">
           ${nodes.map(n=>`
-            <article class="flow-node ${n.type||""} ${n.path||"normal"}" data-node-id="${esc(n.id)}" data-stage="${idx}">
+            <article class="flow-node ${n.type||""} ${n.path||"normal"}" data-node-id="${esc(n.id)}">
               ${n.path?`<span class="flow-node-path ${n.path}">${esc(JOURNEY.pathLabels[n.path]||n.path)}</span>`:""}
               <div class="flow-node-title">${esc(n.title||"(无标题)")}</div>
               ${n.desc?`<div class="flow-node-meta">${esc(n.desc)}</div>`:""}
@@ -562,7 +657,6 @@ function render(){
     `;
   }).filter(Boolean).join("");
 
-  // 绑定节点点击
   container.querySelectorAll(".flow-node").forEach(el=>{
     el.addEventListener("click",e=>{
       e.stopPropagation();
@@ -571,7 +665,6 @@ function render(){
       if(node) openDetail(node);
     });
   });
-  // 阶段折叠/展开
   container.querySelectorAll(".flow-action").forEach(btn=>{
     btn.addEventListener("click",e=>{
       e.stopPropagation();
@@ -586,21 +679,103 @@ function render(){
   });
 }
 
-/* ====================== Detail Close Handlers ====================== */
+/* ====================== 总览图（横向整条旅程） ====================== */
+function renderOverview(list){
+  const wrap=$("overviewContainer");
+  const pathOrder={normal:0, alternative:1, handoff:2, exception:3, recovery:4, failure:5};
+  const groups={};
+  JOURNEY.stages.forEach((s,i)=>groups[i]=[]);
+  list.forEach(n=>{ if(groups[n.stage]) groups[n.stage].push(n); });
+
+  const stageCols=JOURNEY.stages.map((stage,idx)=>{
+    const nodes=groups[idx].slice().sort((a,b)=>(pathOrder[a.path]??9)-(pathOrder[b.path]??9));
+    if(nodes.length===0) return `<div class="ov-stage"><div class="ov-stage-head"><div class="ov-stage-num">${idx+1}</div><div class="ov-stage-name">${esc(stage.name)}</div></div><div class="ov-lane"><div style="font-size:10px;color:var(--ink-300);text-align:center;padding:12px 0">—（未参与）</div></div></div>`;
+    const lane=nodes.map(n=>`
+      <article class="ov-node ${n.path||"normal"}" data-node-id="${esc(n.id)}">
+        <span class="ov-role">${esc(roleShort(n.role))}</span>
+        <div class="ov-title">${esc(n.title||"(无标题)")}</div>
+        ${n.desc?`<div class="ov-sub">${esc(n.desc)}</div>`:""}
+      </article>
+    `).join("");
+    return `
+      <div class="ov-stage" data-stage="${idx}">
+        <div class="ov-stage-head">
+          <div class="ov-stage-num">${idx+1}</div>
+          <div class="ov-stage-name">${esc(stage.name)}</div>
+          <div class="ov-stage-desc">${nodes.length} 节点</div>
+        </div>
+        <div class="ov-lane">${lane}</div>
+      </div>
+    `;
+  }).join("");
+
+  const legend=`
+    <div class="ov-legend">
+      <span class="ov-legend-item"><span class="ov-legend-swatch normal"></span>主路径</span>
+      <span class="ov-legend-item"><span class="ov-legend-swatch alternative"></span>备选</span>
+      <span class="ov-legend-item"><span class="ov-legend-swatch handoff"></span>交接</span>
+      <span class="ov-legend-item"><span class="ov-legend-swatch exception"></span>异常</span>
+      <span class="ov-legend-item"><span class="ov-legend-swatch recovery"></span>恢复</span>
+      <span class="ov-legend-item"><span class="ov-legend-swatch failure"></span>失败</span>
+      <span class="ov-legend-item" style="margin-left:6px;color:var(--ink-400)">← 点击任意节点查看详情</span>
+    </div>`;
+
+  wrap.innerHTML=`
+    <div class="overview-wrap">
+      <div class="overview">
+        <div class="ov-track">${stageCols}</div>
+      </div>
+      ${legend}
+    </div>
+  `;
+
+  wrap.querySelectorAll(".ov-node").forEach(el=>{
+    el.addEventListener("click",e=>{
+      e.stopPropagation();
+      const id=el.dataset.nodeId;
+      const node=list.find(n=>n.id===id);
+      if(node) openDetail(node);
+    });
+  });
+}
+
+function roleShort(id){
+  const r=JOURNEY.roles.find(x=>x.id===id);
+  if(!r) return id||"";
+  return r.short||r.name.slice(0,2);
+}
+
 $("detailClose").addEventListener("click",closeDetail);
-$("detailOverlay").addEventListener("click",e=>{
-  if(e.target===e.currentTarget) closeDetail();
-});
-document.addEventListener("keydown",e=>{
-  if(e.key==="Escape") closeDetail();
+$("detailOverlay").addEventListener("click",e=>{ if(e.target===e.currentTarget) closeDetail(); });
+document.addEventListener("keydown",e=>{ if(e.key==="Escape") closeDetail(); });
+
+/* ====================== View Switch ====================== */
+let currentView="overview";
+function switchView(view){
+  currentView=view;
+  document.querySelectorAll(".view-btn").forEach(b=>{
+    const active=b.dataset.view===view;
+    b.classList.toggle("active",active);
+    b.setAttribute("aria-selected",active?"true":"false");
+  });
+  $("overviewContainer").style.display=view==="overview"?"block":"none";
+  $("flowContainer").style.display=view==="flow"?"block":"none";
+  const v=params.get("view");
+  syncURL();
+}
+document.querySelectorAll(".view-btn").forEach(b=>{
+  b.addEventListener("click",()=>switchView(b.dataset.view));
 });
 
-/* ====================== Init ====================== */
 function init(){
   initMeta();
   initRoleTabs();
   initFilters();
   render();
+  // 恢复视图
+  const v=params.get("view");
+  if(v==="flow"||v==="overview") switchView(v);
+  else switchView("overview");
   if(location.hash){
     const id=location.hash.slice(1);
     setTimeout(()=>{
