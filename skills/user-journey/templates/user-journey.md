@@ -17,7 +17,9 @@ upstream_artifact_id: ""
 > 项目/需求：待确认
 > 一句话旅程叙事：待确认
 > 治理伴随文件：user-journey.governance.md
-> 可选审阅板：user-journey.board.html
+> 可选审阅板：user-journey.board.html（Figma 风中性模板，复制 `assets/user-journey-board.html` 后只替换 DATA 对象；详见 `references/html-journey-board.md` 数据契约）
+>
+> **设计风格一致性**：HTML 审阅板视觉风格（顶部 sticky 工具条 / Frame 块 / 水平时间线 / MOT 节点金色光晕 / 路径类型 6 态边框 / 暗色模式）与 skill 产物（`user-journey.md` 嵌入的 HTML 产物、对比报告、UJ 治理文件、open-source 镜像）保持一致——避免 HTML 与 markdown 视觉规范漂移。
 
 ## 预检与摘要
 
@@ -47,6 +49,17 @@ upstream_artifact_id: ""
 | 阶段 | 触发与行为 | 触点/交接 | 结果与阻碍 | 路径类型 |
 |---|---|---|---|---|
 | 待确认 | 待确认 | 待确认 | 待确认 | normal / alternative / exception / failure / handoff / recovery |
+
+### 产品层展开（granularity = business+product 时）
+
+若 frontmatter `granularity` 含 `product`，请在角色旅程矩阵下用子表分开，并按以下建议子块逐块落地（每块与 `references/journey-extraction-guardrails.md` 逐条核对）：
+
+1. **通知/提醒形态枚举清单**：外部渠道（短信 / 邮件 / 服务号消息 / …）+ 站内提醒（红点 / 标签 / 弹窗 / Reminder 等）逐条枚举，每条含材料定位、已知规则、旅程落点、证据；流程图中独立出现的提示节点（如 Receive a reminder）单独登记并追问规则，**不并入已知形态**。
+2. **多品类对照表**（材料含多品类并列页时必含）：行 = 维度（信息字段 / 功能入口 / 信息入口 / 删除入口 / 内容法务待办），列 = 品类；矩阵节点归并保留"品类适用范围"列。
+3. **分支骨架与空态矩阵**（旅程含资产对象或受身份/登录态控制时必含）：身份 × 登录 × 资产状态组合 → 影响的旅程节点 → 材料给出的去向；TBC 也先画骨架并明示"骨架≠裁决"，不替上游裁决。
+4. **占位符登记**：文案含动态变量（XX / 性别称谓 / 落地链接 / 退订指令等）需登记清单与口径待确认，供下游 BRD 直接认领。
+
+每个子块须写明材料定位（页/节点/行号）与证据状态（FACT / DECISION / ASSUMPTION / AI_INFERENCE / UNKNOWN / CONFLICT）；缺证据的格子标 `待确认` 或 `UNKNOWN`，不替上游补全。
 
 ## 路径与情绪
 

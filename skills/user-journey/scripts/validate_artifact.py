@@ -6,7 +6,6 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
-import os
 import re
 import sys
 from pathlib import Path
@@ -41,16 +40,9 @@ GOVERNANCE_HEADINGS = ["类型判断与输入充分度", "主张来源与知识�
 # never creates that state. ``simulated`` belongs to other artifact families.
 VALID_STATUSES = {"draft", "needs_user_input", "conditional_review", "ready_for_human_review", "confirmed", "superseded"}
 FORBIDDEN_MAIN_HEADINGS = {"事实与决定", "假设、AI 推断、未知与冲突", "来源追溯", "Constitution Compliance", "Clarifications", "产品质量增强记录"}
-# v1.1:reference 必选清单(P0-1)。这些 reference 在 v1.1 skill 里是"无前置条件必选",
-# 任何 user-journey 产物都必须实际加载并在治理文件登记。
-REQUIRED_REFERENCES = [
-    "references/output-contract.md",
-    "references/audit-checklist.md",
-    "references/anti-patterns.md",
-]
-# 项目专属基线 doc_id 默认从环境变量 BASELINE_DOC_ID 读取,便于不同项目复用本校验器。
-# 留空时跳过项目专属基线校验(generic 模式)。
-MEETING_ID = os.environ.get("BASELINE_DOC_ID", "")
+# 项目级会议基线（可选）：不再硬编码特定会议 ID；若治理伴随文件登记了基线段，则校验段内 token 与原文链接。
+GOVERNANCE_BASELINE_SECTIONS = ("项目级会议基线（可选）", "001 会议基线读取记录")
+BASELINE_REQUIRED_TOKENS = ("读取命令", "四类拆分", "使用位置")
 
 
 def parse_frontmatter(text: str) -> dict[str, str]:
@@ -73,55 +65,6 @@ def headings(text: str) -> list[str]:
 def section(text: str, title: str) -> str:
     match = re.search(rf"^##\s+{re.escape(title)}\s*$(.*?)(?=^##\s+|\Z)", text, re.MULTILINE | re.DOTALL)
     return match.group(1).strip() if match else ""
-
-
-def _parse_loaded_references(governance_text: str) -> set[str]:
-    """从治理伴随文件中解析"已加载 reference 清单"。
-
-    接受 markdown 表格行,匹配 `| references/xxx.md | 已加载 | ... |`。
-    返回所有状态为"已加载"或缺失状态字段的 reference 路径集合。
-    """
-    block = section(governance_text, "类型判断与输入充分度")
-    if not block:
-        return set()
-    refs: set[str] = set()
-    for line in block.splitlines():
-        if "|" not in line or "---" in line:
-            continue
-        cells = [c.strip() for c in line.strip().strip("|").split("|")]
-        if len(cells) < 2:
-            continue
-        ref_path = cells[0]
-        status = cells[1] if len(cells) >= 2 else ""
-        # 接受 `references/xxx.md` 或 `xxx.md` 两种写法
-        if not ref_path.endswith(".md"):
-            continue
-        if "跳过" not in status and "skipped" not in status.lower():
-            refs.add(ref_path)
-    return refs
-
-
-def _parse_skipped_references(governance_text: str) -> dict[str, str]:
-    """从治理伴随文件中解析"已加载 reference 清单"中状态为"跳过"的行。
-
-    返回 {reference_path: reason}。reason 必须 ≥ 10 汉字且非占位。
-    """
-    block = section(governance_text, "类型判断与输入充分度")
-    if not block:
-        return {}
-    skipped: dict[str, str] = {}
-    for line in block.splitlines():
-        if "|" not in line or "---" in line:
-            continue
-        cells = [c.strip() for c in line.strip().strip("|").split("|")]
-        if len(cells) < 3:
-            continue
-        ref_path, status, reason = cells[0], cells[1], cells[2]
-        if not ref_path.endswith(".md"):
-            continue
-        if "跳过" in status or "skipped" in status.lower():
-            skipped[ref_path] = reason
-    return skipped
 
 
 def issue(severity: str, check_id: str, path: Path, message: str, blocking: bool = True) -> dict[str, object]:
@@ -178,7 +121,12 @@ def validate(path: Path) -> dict[str, object]:
     if not re.search(r"FACT|DECISION|ASSUMPTION|AI_INFERENCE|UNKNOWN|CONFLICT", text):
         warnings.append(issue("MEDIUM", "uj.knowledge_state_missing", path, "No knowledge-state label found", False))
 
-    companion = path.with_name("user-journey.governance.md")
+    # 伴随文件定位：默认按 artifact 命名（`<stem>.governance.md`），找不到则回退到规范名（兼容旧用法）
+    companion = path.with_name(f"{path.stem}.governance.md")
+    if not companion.is_file():
+        legacy = path.with_name("user-journey.governance.md")
+        if legacy.is_file():
+            companion = legacy
     if not companion.is_file():
         severity = "CRITICAL" if status in {"ready_for_human_review", "confirmed"} else "MEDIUM"
         target = errors if severity == "CRITICAL" else warnings
@@ -197,32 +145,27 @@ def validate(path: Path) -> dict[str, object]:
             errors.append(issue("CRITICAL", "uj.artifact_id_mismatch", companion, "Main document and governance companion have different artifact_id values"))
         if gov_meta.get("main_version") and gov_meta["main_version"] != meta.get("version"):
             errors.append(issue("CRITICAL", "uj.version_mismatch", companion, "Main document and governance companion have different versions"))
-
-        # v1.1:校验 reference 加载清单(P0-1)
-        loaded_refs = _parse_loaded_references(governance_text)
-        for required_ref in REQUIRED_REFERENCES:
-            if required_ref not in loaded_refs:
-                errors.append(issue(
-                    "CRITICAL", "uj.required_reference_missing", companion,
-                    f"reference '{required_ref}' must be loaded and recorded in 已加载 reference 清单 (per skill v1.1 条件必选规则)"
-                ))
-        skipped_refs = _parse_skipped_references(governance_text)
-        for ref_name, reason in skipped_refs.items():
-            if not reason or len(reason.strip()) < 10 or reason.strip() in {"不适用", "待确认", "N/A", "n/a", "—", "-"}:
-                errors.append(issue(
-                    "CRITICAL", "uj.conditional_reference_skipped_invalid", companion,
-                    f"reference '{ref_name}' declared as 跳过 but reason must be ≥ 10 汉字 and not a placeholder"
-                ))
         actual_hash = hashlib.sha256(text.encode("utf-8")).hexdigest()
         recorded_hash = gov_meta.get("main_sha256", "")
         if recorded_hash not in {"", "待确认", "待补充"} and recorded_hash != actual_hash:
             errors.append(issue("CRITICAL", "uj.hash_mismatch", companion, "main_sha256 does not match user-journey.md"))
         if status == "confirmed":
             errors.append(issue("CRITICAL", "uj.status_confirmed", path, "user-journey output cannot be confirmed by the skill"))
-        if meta.get("artifact_id", "").endswith("-001") and "<" not in meta.get("artifact_id", "") and MEETING_ID:
-            meeting_section = section(governance_text, "项目专属基线读取记录（可选）")
-            if MEETING_ID not in meeting_section or "lark-cli" not in meeting_section or "四类拆分" not in meeting_section:
-                errors.append(issue("CRITICAL", "uj.meeting_baseline_missing", companion, "项目专属基线材料必须在治理伴随文件记录 CLI 读取命令和四类拆分。"))
+        if meta.get("artifact_id", "").endswith("-001"):
+            # 项目级会议基线（可选）：仅当治理伴随文件登记了基线段才校验；未登记不报错
+            meeting_section = ""
+            for title in GOVERNANCE_BASELINE_SECTIONS:
+                meeting_section = section(governance_text, title)
+                if meeting_section:
+                    break
+            if meeting_section:
+                missing_tokens = [t for t in BASELINE_REQUIRED_TOKENS if t not in meeting_section]
+                if missing_tokens:
+                    errors.append(issue("CRITICAL", "uj.meeting_baseline_incomplete", companion,
+                        f"治理伴随文件登记了项目级会议基线，但缺少必要 token：{', '.join(missing_tokens)}"))
+                if not re.search(r"https?://|feishu\.cn|lark\.cn|notion\.|confluence\.", meeting_section):
+                    warnings.append(issue("MEDIUM", "uj.meeting_baseline_no_link", companion,
+                        "项目级会议基线段未发现原文链接，请确认是否需要补充", False))
 
     return {
         "ok": not errors,

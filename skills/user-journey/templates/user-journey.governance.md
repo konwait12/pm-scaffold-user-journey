@@ -18,35 +18,19 @@ board_artifact: ""
 - 角色与阶段是否足够：待确认
 - 是否生成 HTML 审阅板：待确认；若生成，记录文件名和版本。
 
-### 已加载 reference 清单（v1.1 必填 · 校验器强制检查）
+## 项目级会议基线（可选）
 
-| reference | 状态 | 跳过理由 |
-|---|---|---|
-| references/output-contract.md | 已加载 | — |
-| references/audit-checklist.md | 已加载 | — |
-| references/anti-patterns.md | 已加载 | — |
-| references/journey-matrix-and-mot.md | 加载 / 跳过 | （跳过时必填≥10 汉字理由） |
-| references/journey-error-recovery-and-metrics.md | 加载 / 跳过 | （跳过时必填≥10 汉字理由） |
-| references/journey-behavior-vs-feature-jtbd.md | 加载 / 跳过 | （跳过时必填≥10 汉字理由） |
-| references/html-journey-board.md | 加载 / 跳过 | （跳过时必填≥10 汉字理由） |
-| references/reviewer-checklist.md | 加载 / 跳过 | （跳过时必填≥10 汉字理由） |
-> 校验器会核对:必选 reference 必须出现在"已加载"列;跳过的 reference 必须有 ≥ 10 汉字且非占位的理由。
+> **本段为可选**：仅当 PM 或项目级集成方显式指定了会议基线时填写。未指定时整个 H2 段可删去，skill 仍可独立运行。详见 `references/source-handling.md` 的通用约定。
+> 项目级集成方若把会议基线 ID 写入 artifact_id 末尾（如 `UJ-MYPROJ-001`），可在本段登记基线来源；若未指定，由项目层自行约定如何触发基线校验。
 
-## 项目专属基线读取记录（可选）
-
-> 仅当本次工作指定了项目专属基线材料时才填写。把基线原文视为来源，AI 摘要不得代替原文。
-
-- 原文标题：待确认（建议填写基线文档/会议名）
-- 原文位置：待确认（飞书/钉钉/Notion 等链接 + 章节/时间点）
-- 读取命令：`lark-cli docs +fetch --doc <BASELINE_DOC_ID> --doc-format markdown --scope full --format pretty`
-  - 其他 CLI（如钉钉/Notion）使用对应命令,记录在治理文件供追溯
-- 检索日期：待确认
+- 原文：待确认（如飞书 / Notion / 企微 / 录音转写 / 会议纪要等）
+- 原文链接：待确认
+- 读取命令：待确认（如 `lark-cli docs +fetch --doc <id> ...`）
+- 检索日期：YYYY-MM-DD
 - 使用位置：待确认
-- 四类拆分：基线明确决定 / 基线业务示例 / 基线讨论或建议 / AI 解读（分别记录，不混写）
+- 四类拆分（分别记录，不混写）：会议明确决定 / 会议业务示例 / 会议讨论或建议 / AI 解读
 
 ## 主张来源与知识状态
-
-> 项目专属基线原文（如有）：参见上方"项目专属基线读取记录"。基线原文、摘要和 AI 解读必须分开登记。
 
 | 主张 | 知识状态 | 来源/位置 | 主文档落点 | 影响 |
 |---|---|---|---|---|
