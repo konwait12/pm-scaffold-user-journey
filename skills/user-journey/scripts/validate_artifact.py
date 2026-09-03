@@ -121,6 +121,16 @@ def validate(path: Path) -> dict[str, object]:
     if not re.search(r"FACT|DECISION|ASSUMPTION|AI_INFERENCE|UNKNOWN|CONFLICT", text):
         warnings.append(issue("MEDIUM", "uj.knowledge_state_missing", path, "No knowledge-state label found", False))
 
+    # 空骨架红线（防冗杂约定 §1）：占位符密度 advisory
+    placeholder_pattern = r"待确认|待补充|TBD|TODO|UNKNOWN|\[空\]|^\s*-\s*$|^\s*\*\s*$"
+    total_lines = max(len([ln for ln in text.splitlines() if ln.strip()]), 1)
+    placeholder_lines = len([ln for ln in text.splitlines() if re.search(placeholder_pattern, ln)])
+    density = placeholder_lines / total_lines
+    if density > 0.30:
+        warnings.append(issue("MEDIUM", "uj.bloat_warning", path,
+            f"占位符密度 {density:.0%}（{placeholder_lines}/{total_lines} 行）超过 30%；产物形式完整但内容可能为空骨架。详见 references/anti-bloat-conventions.md §1",
+            False))
+
     # 用户故事种子（P0-2）：当 granularity 含 product 时，期望主文档产品层展开段含「用户故事种子」子表
     granularity = meta.get("granularity", "")
     product_layer_active = "product" in granularity.lower()
