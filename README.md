@@ -70,22 +70,17 @@ python3 skills/user-journey/scripts/validate_artifact.py path/to/user-journey.md
 - 路径类型覆盖至少 2 种(`uj.path_diversity_missing`)
 - 治理伴随文件存在(否则 `uj.governance_missing`)
 - 主文档/治理伴随文件 `artifact_id` / `version` / `main_sha256` 一致
-- 若设置了 `BASELINE_DOC_ID` 且主文档 `artifact_id` 结尾是 `-001`,检查基线读取记录
+- 不依赖任何环境变量或外部工具,只用 Python 标准库
 
-### 4. 启用项目专属基线校验(可选)
-
-```bash
-export BASELINE_DOC_ID=<PM-指定的飞书-doc-id>
-python3 skills/user-journey/scripts/validate_artifact.py user-journey.md --json
-```
-
-### 5. 打开 HTML 审阅板
+### 4. 打开 HTML 审阅板
 
 ```bash
 open skills/user-journey/assets/user-journey-board.html
 ```
 
-把旅程节点粘贴或加载到 HTML 板的 `<script>` 数据区,可在浏览器里按角色/阶段/路径筛选、展开证据与未知项。
+`assets/user-journey-board.html` 是 Figma 风的中性模板:单文件、零外部依赖、支持明暗色模式。
+
+用法是**只替换文件里的 `DATA` 对象**(`meta` / `stages` / `roles` / `nodes` / `edges`,以及 5 段可选附录),**不要重写样式与交互层**——未填写的附录会自动隐藏,不会留下空骨架。契约说明见 `references/html-journey-board.md`。
 
 ## 产物结构
 
@@ -164,7 +159,9 @@ C. 都要 — 业务层为主,产品层附在每个阶段之后
 - [`skills/user-journey/references/journey-matrix-and-mot.md`](skills/user-journey/references/journey-matrix-and-mot.md) — 矩阵与 MOT
 - [`skills/user-journey/references/journey-behavior-vs-feature-jtbd.md`](skills/user-journey/references/journey-behavior-vs-feature-jtbd.md) — 行为 vs 功能
 - [`skills/user-journey/references/journey-error-recovery-and-metrics.md`](skills/user-journey/references/journey-error-recovery-and-metrics.md) — 异常恢复与指标
-- [`skills/user-journey/references/html-journey-board.md`](skills/user-journey/references/html-journey-board.md) — HTML 审阅板契约
+- [`skills/user-journey/references/journey-extraction-guardrails.md`](skills/user-journey/references/journey-extraction-guardrails.md) — 提取护栏(Generate 前必读:品类分列 / 提醒形态枚举 / 空态与身份分支骨架 / 版式线索文字化 / 占位符登记)
+- [`skills/user-journey/references/divergence-checklist.md`](skills/user-journey/references/divergence-checklist.md) — 偏差自检清单
+- [`skills/user-journey/references/html-journey-board.md`](skills/user-journey/references/html-journey-board.md) — HTML 审阅板契约(Figma 风模板 + DATA 契约)
 - [`skills/user-journey/references/how-to-verify-with-other-ai.md`](skills/user-journey/references/how-to-verify-with-other-ai.md) — 用其他 AI 反向验证的 prompt 模板
 - [`skills/user-journey/references/output-contract.md`](skills/user-journey/references/output-contract.md) — 输出契约
 - [`skills/user-journey/references/audit-checklist.md`](skills/user-journey/references/audit-checklist.md) — 审计清单
